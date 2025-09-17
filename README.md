@@ -42,7 +42,7 @@ It adds **DSF/DFF** playback with correct duration/elapsed time, **seeking**, an
 Typical local build:
 
 ```bash
-mkdir -p build && cd build
+mkdir -p bin && cd bin
 cmake ..
 make -j"$(nproc)"
 ./clementine
