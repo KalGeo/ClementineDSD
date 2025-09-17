@@ -226,8 +226,17 @@ void GstEngine::ReloadSettings() {
   QSettings s;
   s.beginGroup(kSettingsGroup);
 
-  sink_ = s.value("sink", kAutoSink).toString();
-  device_ = s.value("device");
+  bool alsa_exclusive = s.value("alsa_exclusive", false).toBool();
+  QVariant configured_device = s.value("device");
+  QString configured_sink = s.value("sink", kAutoSink).toString();
+
+  if (alsa_exclusive) {
+    sink_ = QString("alsasink");
+    device_ = s.value("alsa_device", configured_device).toString();
+  } else {
+    sink_ = configured_sink;
+    device_ = configured_device;
+  }
 
   if (sink_.isEmpty()) sink_ = kAutoSink;
 

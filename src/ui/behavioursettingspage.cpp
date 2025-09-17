@@ -120,7 +120,7 @@ void BehaviourSettingsPage::Load() {
   ui_->b_keep_running_->setChecked(false);
 #else
   if (QSystemTrayIcon::isSystemTrayAvailable()) {
-    ui_->b_show_tray_icon_->setChecked(s.value("showtray", true).toBool());
+    ui_->b_show_tray_icon_->setChecked(s.value("showtray", false).toBool());
     ui_->b_scroll_tray_icon_->setChecked(
         s.value("scrolltrayicon", ui_->b_show_tray_icon_->isChecked())
             .toBool());

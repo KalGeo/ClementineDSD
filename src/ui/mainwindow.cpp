@@ -1102,9 +1102,7 @@ MainWindow::~MainWindow() { delete ui_; }
 
 void MainWindow::ReloadSettings() {
 #ifndef Q_OS_DARWIN
-  bool show_tray =
-      settings_.value("showtray", QSystemTrayIcon::isSystemTrayAvailable())
-          .toBool();
+  bool show_tray = settings_.value("showtray", false).toBool();
 
   if (tray_icon_) tray_icon_->SetVisible(show_tray);
   if ((!show_tray || !QSystemTrayIcon::isSystemTrayAvailable()) && !isVisible())

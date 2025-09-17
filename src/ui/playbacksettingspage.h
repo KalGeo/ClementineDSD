@@ -36,6 +36,7 @@ class PlaybackSettingsPage : public SettingsPage {
   void FadingOptionsChanged();
   void RgPreampChanged(int value);
   void BufferMinFillChanged(int value);
+  void AlsaExclusiveToggled(bool on);
 
  private:
   Ui_PlaybackSettingsPage* ui_;

@@ -40,7 +40,7 @@ OSD::OSD(SystemTrayIcon* tray_icon, Application* app, QObject* parent)
       tray_icon_(tray_icon),
       app_(app),
       timeout_msec_(5000),
-      behaviour_(Native),
+      behaviour_(Disabled),
       show_on_volume_change_(false),
       show_art_(true),
       show_on_play_mode_change_(true),
@@ -65,7 +65,7 @@ OSD::~OSD() { delete pretty_popup_; }
 void OSD::ReloadSettings() {
   QSettings s;
   s.beginGroup(kSettingsGroup);
-  behaviour_ = OSD::Behaviour(s.value("Behaviour", Native).toInt());
+  behaviour_ = OSD::Behaviour(s.value("Behaviour", Disabled).toInt());
   timeout_msec_ = s.value("Timeout", 5000).toInt();
   show_on_volume_change_ = s.value("ShowOnVolumeChange", false).toBool();
   show_art_ = s.value("ShowArt", true).toBool();

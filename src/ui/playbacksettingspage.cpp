@@ -18,6 +18,8 @@
 #include "playbacksettingspage.h"
 
 #include "engines/gstengine.h"
+#include "engines/alsadevicefinder.h"
+#include "engines/devicefinder.h"
 #include "iconloader.h"
 #include "playlist/playlist.h"
 #include "settingsdialog.h"
@@ -36,6 +38,8 @@ PlaybackSettingsPage::PlaybackSettingsPage(SettingsDialog* dialog)
 
   connect(ui_->buffer_min_fill, SIGNAL(valueChanged(int)),
           SLOT(BufferMinFillChanged(int)));
+  connect(ui_->alsa_exclusive, SIGNAL(toggled(bool)),
+          SLOT(AlsaExclusiveToggled(bool)));
   ui_->buffer_min_fill_value_label->setMinimumWidth(
       QFontMetrics(ui_->buffer_min_fill_value_label->font()).width("WW%"));
 
@@ -67,6 +71,7 @@ void PlaybackSettingsPage::Load() {
 
 
   ui_->gst_output->clear();
+  ui_->alsa_device_combo->clear();
   for (const GstEngine::OutputDetails& output : engine->GetOutputsList()) {
     QIcon icon;
     if (!output.icon_name.isEmpty()) {
@@ -104,6 +109,8 @@ void PlaybackSettingsPage::Load() {
   s.beginGroup(GstEngine::kSettingsGroup);
   QString sink = s.value("sink", GstEngine::kAutoSink).toString();
   QVariant device = s.value("device");
+  bool alsa_exclusive = s.value("alsa_exclusive", false).toBool();
+  QString alsa_device = s.value("alsa_device", QString()).toString();
 
   ui_->gst_output->setCurrentIndex(0);
   for (int i = 0; i < ui_->gst_output->count(); ++i) {
@@ -131,6 +138,33 @@ void PlaybackSettingsPage::Load() {
       s.value(GstEngine::kSettingFormat, GstEngine::kOutFormatDetect)
           .toString()));
   ui_->buffer_min_fill->setValue(s.value("bufferminfill", 33).toInt());
+  ui_->alsa_exclusive->setChecked(alsa_exclusive);
+  ui_->alsa_device_label->setEnabled(alsa_exclusive);
+  ui_->alsa_device_combo->setEnabled(alsa_exclusive);
+
+  // Populate ALSA devices list using AlsaDeviceFinder directly
+  QList<DeviceFinder::Device> alsa_devices;
+#ifdef HAVE_ALSA
+  {
+    AlsaDeviceFinder finder;
+    if (finder.Initialise()) {
+      alsa_devices = finder.ListDevices();
+    }
+  }
+#endif
+  for (const DeviceFinder::Device& dev : alsa_devices) {
+    QString desc = dev.description.isEmpty() ? dev.device_property_value.toString() : dev.description;
+    ui_->alsa_device_combo->addItem(desc, dev.device_property_value);
+  }
+  // Also add a manual entry if previous setting isn't in the list
+  if (!alsa_device.isEmpty()) {
+    int idx = ui_->alsa_device_combo->findData(QVariant(alsa_device));
+    if (idx < 0) {
+      ui_->alsa_device_combo->addItem(alsa_device, QVariant(alsa_device));
+      idx = ui_->alsa_device_combo->count() - 1;
+    }
+    ui_->alsa_device_combo->setCurrentIndex(idx);
+  }
   s.endGroup();
 }
 
@@ -156,8 +190,17 @@ void PlaybackSettingsPage::Save() {
           .value<GstEngine::OutputDetails>();
 
   s.beginGroup(GstEngine::kSettingsGroup);
-  s.setValue("sink", details.gstreamer_plugin_name);
-  s.setValue("device", details.device_property_value);
+  if (ui_->alsa_exclusive->isChecked()) {
+    s.setValue("alsa_exclusive", true);
+    s.setValue("alsa_device", ui_->alsa_device_combo->currentData().toString());
+    s.setValue("sink", QString("alsasink"));
+    s.setValue("device", ui_->alsa_device_combo->currentData());
+  } else {
+    s.setValue("alsa_exclusive", false);
+    s.setValue("alsa_device", QString());
+    s.setValue("sink", details.gstreamer_plugin_name);
+    s.setValue("device", details.device_property_value);
+  }
   s.setValue("rgenabled", ui_->replaygain->isChecked());
   s.setValue("rgmode", ui_->replaygain_mode->currentIndex());
   s.setValue("rgpreamp", float(ui_->replaygain_preamp->value()) / 10 - 15);
@@ -189,4 +232,9 @@ void PlaybackSettingsPage::FadingOptionsChanged() {
   ui_->fading_options->setEnabled(ui_->fading_out->isChecked() ||
                                   ui_->fading_cross->isChecked() ||
                                   ui_->fading_auto->isChecked());
+}
+
+void PlaybackSettingsPage::AlsaExclusiveToggled(bool on) {
+  ui_->alsa_device_label->setEnabled(on);
+  ui_->alsa_device_combo->setEnabled(on);
 }

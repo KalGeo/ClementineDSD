@@ -135,7 +135,7 @@ void NotificationsSettingsPage::Load() {
 
   s.beginGroup(OSD::kSettingsGroup);
   OSD::Behaviour osd_behaviour =
-      OSD::Behaviour(s.value("Behaviour", OSD::Native).toInt());
+      OSD::Behaviour(s.value("Behaviour", OSD::Disabled).toInt());
   switch (osd_behaviour) {
     case OSD::Native:
       if (OSD::SupportsNativeNotifications()) {
