@@ -34,6 +34,8 @@ TranscoderSettingsPage::TranscoderSettingsPage(SettingsDialog* dialog)
   AddTab(tr("Speex"), Transcoder::Codec_Speex);
   AddTab(tr("Opus"), Transcoder::Codec_Opus);
   AddTab(tr("WMA"), Transcoder::Codec_Wma);
+  AddTab(tr("DSF"), Transcoder::Codec_Dsf);
+  AddTab(tr("DFF"), Transcoder::Codec_Dff);
 }
 
 TranscoderSettingsPage::~TranscoderSettingsPage() { delete ui_; }

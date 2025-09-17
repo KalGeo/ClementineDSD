@@ -427,6 +427,10 @@ QString Song::TextForFiletype(FileType type) {
       return QObject::tr("Windows Media audio");
     case Song::Type_Flac:
       return QObject::tr("FLAC");
+    case Song::Type_Dsf:
+      return QObject::tr("DSF");
+    case Song::Type_Dff:
+      return QObject::tr("DFF");
     case Song::Type_Mp4:
       return QObject::tr("MP4 AAC");
     case Song::Type_Mpc:
@@ -472,6 +476,8 @@ bool Song::IsFileLossless() const {
     case Song::Type_Aiff:
     case Song::Type_APE:
     case Song::Type_Flac:
+    case Song::Type_Dsf:
+    case Song::Type_Dff:
     case Song::Type_OggFlac:
     case Song::Type_Wav:
     case Song::Type_WavPack:
@@ -844,6 +850,12 @@ void Song::InitFromMTP(const LIBMTP_track_t* track, const QString& host) {
     case LIBMTP_FILETYPE_AAC:
       d->filetype_ = Type_Mp4;
       break;
+//    case LIBMTP_FILETYPE_DSF:
+//      d->filetype_ = Type_Dsf;
+//      break;
+//    case LIBMTP_FILETYPE_DFF:
+//      d->filetype_ = Type_Dff;
+//      break;
     case LIBMTP_FILETYPE_FLAC:
       d->filetype_ = Type_OggFlac;
       break;
@@ -895,6 +907,12 @@ void Song::ToMTP(LIBMTP_track_t* track) const {
       break;
     case Type_Mpeg:
       track->filetype = LIBMTP_FILETYPE_MP3;
+      break;
+    case Type_Dsf:
+      track->filetype = LIBMTP_FILETYPE_UNKNOWN;
+      break;
+    case Type_Dff:
+      track->filetype = LIBMTP_FILETYPE_UNKNOWN;
       break;
     case Type_Flac:
     case Type_OggFlac:

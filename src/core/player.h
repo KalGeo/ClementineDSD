@@ -27,6 +27,9 @@
 #ifndef CORE_PLAYER_H_
 #define CORE_PLAYER_H_
 
+class GstEngine;
+
+
 #include <QDateTime>
 #include <QObject>
 #include <QSettings>
@@ -39,9 +42,12 @@
 #include "engines/engine_fwd.h"
 #include "playlist/playlistitem.h"
 
+class DsdAlsaEngine;
 class Application;
 class MediaPlaybackRequest;
 class Scrobbler;
+
+
 
 class PlayerInterface : public QObject {
   Q_OBJECT
@@ -101,8 +107,9 @@ class PlayerInterface : public QObject {
   void VolumeChanged(int volume);
   void Error(const QString& message);
   void TrackSkipped(PlaylistItemPtr old_track);
+  void PositionChanged(qint64 microseconds);
   // Emitted when there's a manual change to the current's track position.
-  void Seeked(qlonglong microseconds);
+  void Seeked(qint64 microseconds);
 
   // Emitted when Player has processed a request to play another song. This
   // contains
@@ -116,7 +123,6 @@ class PlayerInterface : public QObject {
 
 class Player : public PlayerInterface {
   Q_OBJECT
-
  public:
   explicit Player(Application* app, QObject* parent = nullptr);
   ~Player();
@@ -130,26 +136,20 @@ class Player : public PlayerInterface {
   };
 
   enum NextTrackOrAlbumSelected { SelectNextTrack, SelectNextAlbum };
-
   void Init();
-
-  EngineBase* engine() const { return engine_.get(); }
+  EngineBase* engine() const { return ActiveEngine(); }
+  GstEngine* pcm_engine() const;
   Engine::State GetState() const { return last_state_; }
   int GetVolume() const;
-
   PlaylistItemPtr GetCurrentItem() const { return current_item_; }
   PlaylistItemPtr GetItemAt(int pos) const;
-
   void RegisterUrlHandler(UrlHandler* handler);
   void UnregisterUrlHandler(UrlHandler* handler);
-
   const UrlHandler* HandlerForUrl(const QUrl& url) const;
-
   bool PreviousWouldRestartTrack() const;
 
  public slots:
   void ReloadSettings();
-
   void PlayAt(int i, Engine::TrackChangeFlags change, bool reshuffle);
   void PlayPause();
   void RestartOrPrevious();
@@ -163,9 +163,7 @@ class Player : public PlayerInterface {
   void SeekTo(int seconds);
   void SeekForward();
   void SeekBackward();
-
   void CurrentMetadataChanged(const Song& metadata);
-
   void Mute();
   void Pause();
   void Stop(bool stop_after = false);
@@ -176,6 +174,7 @@ class Player : public PlayerInterface {
   void TogglePrettyOSD();
 
  private slots:
+  void dummyLogPosition(qint64 us);
   void EngineStateChanged(Engine::State);
   void EngineMetadataReceived(const Engine::SimpleMetaBundle& bundle);
   void TrackAboutToEnd();
@@ -194,37 +193,49 @@ class Player : public PlayerInterface {
 
   void ValidMediaRequested(const MediaPlaybackRequest&);
   void InvalidMediaRequested(const MediaPlaybackRequest&);
-
   void UrlHandlerDestroyed(QObject* object);
   void HandleLoadResult(const UrlHandler::LoadResult& result);
-
- private:
-  // Returns true if we were supposed to stop after this track.
-  bool HandleStopAfter();
-
-  void HandleInvalidItem(const QUrl& url);
-
- private:
+  void OnDsdPositionChanged(qint64 us);
+  
+ private:  
   Application* app_;
   Scrobbler* lastfm_;
   QSettings settings_;
-
   PlaylistItemPtr current_item_;
-
+  
   std::unique_ptr<EngineBase> engine_;
+  std::unique_ptr<DsdAlsaEngine>  dsd_engine_; 
+  
+  bool dsd_active_ = false;
+  EngineBase* ActiveEngine() const;
+// is this nesssery ?? START
+  //bool pending_dsd_ = false;
+  //MediaPlaybackRequest pending_dsd_req_;
+  //Engine::TrackChangeFlags pending_dsd_change_ = Engine::Manual;
+  //bool pending_dsd_has_cue_ = false;
+  //quint64 pending_dsd_begin_ = 0;
+  //quint64 pending_dsd_end_ = 0;
+// is this nesssery ?? END
+  
+  int RowToPlayFromUI() const;
+  
   Engine::TrackChangeFlags stream_change_type_;
   Engine::State last_state_;
   int nb_errors_received_;
-
   QMap<QString, UrlHandler*> url_handlers_;
-
   QUrl loading_async_;
-
   int volume_before_mute_;
-
   QDateTime last_pressed_previous_;
   PreviousBehaviour menu_previousmode_;
   int seek_step_sec_;
+
+  bool IsDsdUrl(const QUrl& url) const;  
+  // Returns true if we were supposed to stop after this track.
+  bool HandleStopAfter();
+  void HandleInvalidItem(const QUrl& url);
 };
+
+
+
 
 #endif  // CORE_PLAYER_H_

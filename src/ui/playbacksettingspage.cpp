@@ -60,6 +60,11 @@ PlaybackSettingsPage::~PlaybackSettingsPage() { delete ui_; }
 
 void PlaybackSettingsPage::Load() {
   const GstEngine* engine = dialog()->gst_engine();
+  if (!engine) {
+    qLog(Warning) << "PlaybackSettingsPage: GstEngine is null; PCM outputs not available (DSD engine active?).";
+    return;
+  }
+
 
   ui_->gst_output->clear();
   for (const GstEngine::OutputDetails& output : engine->GetOutputsList()) {

@@ -33,6 +33,8 @@ const QStringList LibraryQuery::kNumericCompOperators = QStringList() << "<="
 const QMap<QString, Song::FileType> kFiletypeId = QMap<QString, Song::FileType>(
     std::map<QString, Song::FileType>{{"asf", Song::Type_Asf},
                                       {"flac", Song::Type_Flac},
+                                      {"dsf", Song::Type_Dsf},
+                                      {"dff", Song::Type_Dff},
                                       {"mp4", Song::Type_Mp4},
                                       {"mpc", Song::Type_Mpc},
                                       {"mp3", Song::Type_Mpeg},

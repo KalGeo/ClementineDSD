@@ -213,6 +213,12 @@ bool MtpDevice::GetSupportedFiletypes(QList<Song::FileType>* ret,
         *ret << Song::Type_Flac;
         *ret << Song::Type_OggFlac;
         break;
+      //case LIBMTP_FILETYPE_DSF:
+        //*ret << Song::Type_Dsf;
+        //break;      
+      //case LIBMTP_FILETYPE_DFF:
+        //*ret << Song::Type_Dff;
+        //break;      
       case LIBMTP_FILETYPE_OGG:
         *ret << Song::Type_OggVorbis;
         *ret << Song::Type_OggSpeex;

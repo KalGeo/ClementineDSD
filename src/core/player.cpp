@@ -26,19 +26,29 @@
 */
 
 #include "player.h"
-
 #include <QSettings>
 #include <QSortFilterProxyModel>
 #include <QtConcurrentRun>
 #include <QtDebug>
-#include <memory>
 
+#include <QElapsedTimer>
+#include <QCoreApplication>
+#include <QThread>
+
+#include <memory>
 #include "config.h"
 #include "core/application.h"
 #include "core/logging.h"
 #include "core/urlhandler.h"
+
 #include "engines/enginebase.h"
+#include "engines/dsdalsaengine.h"
+
 #include "engines/gstengine.h"
+GstEngine* Player::pcm_engine() const {
+  return static_cast<GstEngine*>(engine_.get());
+}
+
 #include "library/librarybackend.h"
 #include "playlist/playlist.h"
 #include "playlist/playlistitem.h"
@@ -74,9 +84,37 @@ Player::Player(Application* app, QObject* parent)
           SLOT(ValidMediaRequested(MediaPlaybackRequest)));
   connect(engine_.get(), SIGNAL(InvalidMediaRequested(MediaPlaybackRequest)),
           SLOT(InvalidMediaRequested(MediaPlaybackRequest)));
+
+// --- DSD Native ALSA engine wiring ---
+dsd_engine_.reset(new DsdAlsaEngine(app_));
+dsd_engine_->Init();
+
+connect(dsd_engine_.get(), SIGNAL(Error(QString)),
+        this, SIGNAL(Error(QString)));
+
+connect(dsd_engine_.get(), SIGNAL(StateChanged(Engine::State)),
+        this, SLOT(EngineStateChanged(Engine::State)), Qt::QueuedConnection);     
+
+connect(dsd_engine_.get(), &Engine::Base::TrackEnded,
+        this, [this](){ this->TrackEnded(); }, Qt::QueuedConnection);
+
+connect(dsd_engine_.get(), SIGNAL(PositionChanged(qint64)),
+        this, SLOT(OnDsdPositionChanged(qint64)));
+
+connect(dsd_engine_.get(), SIGNAL(Seeked(qint64)),
+        this, SIGNAL(Seeked(qint64)));        
+
+connect(dsd_engine_.get(), SIGNAL(PositionChanged(qint64)),
+        this, SLOT(dummyLogPosition(qint64)));
+          
 }
 
-Player::~Player() {}
+
+Player::~Player() {
+  // Stop both engines to ensure all worker threads join before app exit
+  if (dsd_engine_) dsd_engine_->Stop(/*stop_after*/ false);
+  if (engine_)     engine_->Stop(/*stop_after*/ false);
+}
 
 void Player::Init() {
   if (!engine_->Init()) qFatal("Error initialising audio engine");
@@ -89,6 +127,8 @@ void Player::Init() {
           SLOT(EngineMetadataReceived(Engine::SimpleMetaBundle)));
 
   engine_->SetVolume(settings_.value("volume", 50).toInt());
+  
+dsd_engine_->SetVolume(settings_.value("volume", 50).toInt());
 
   ReloadSettings();
 
@@ -146,12 +186,65 @@ void Player::HandleLoadResult(const UrlHandler::LoadResult& result) {
         item->SetTemporaryMetadata(song);
         app_->playlist_manager()->active()->InformOfCurrentSongChange();
       }
+      
       MediaPlaybackRequest req(result.original_url_, result.media_url_);
       if (!result.auth_header_.isEmpty())
         req.headers_["Authorization"] = result.auth_header_;
-      engine_->Play(req, stream_change_type_, item->Metadata().has_cue(),
-                    item->Metadata().beginning_nanosec(),
-                    item->Metadata().end_nanosec());
+      // ...
+
+      if (IsDsdUrl(req.MediaUrl())) {
+        // Ensure GST releases ALSA so DAC can switch to DSD altset
+        if (engine_) {
+          engine_->Stop(false);
+
+          // NEW: wait up to ~1.5 s for GST to fully release ALSA
+          QElapsedTimer t; t.start();
+          while (t.elapsed() < 3000) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+            if (engine_->state() == Engine::Empty) break;
+            QThread::msleep(20);
+          }
+		// tiny settle to let the sink thread close the fd
+		QThread::msleep(100);
+        }
+		
+        dsd_active_ = true;
+
+        // Try Load() and only Play() if it succeeds. If ALSA is still busy,
+        // retry a few times while letting the UI process events.
+        {
+          QElapsedTimer w; w.start();
+          bool ok = false;
+          while (w.elapsed() < 6500 && !ok) {  // up to ~6.5 s
+            ok = dsd_engine_->Load(req, stream_change_type_,
+                                   item->Metadata().has_cue(),
+                                   item->Metadata().beginning_nanosec(),
+                                   item->Metadata().end_nanosec());
+            if (ok) break;
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+            QThread::msleep(120);
+          }
+          if (!ok) {
+            qLog(Error) << "DSD: Load failed after waiting ALSA release; aborting Play()";
+            return;  // don't call Play(); the user can try again
+          }
+        }
+
+        dsd_engine_->Play(0);
+
+      } else {
+        // Ensure native DSD engine releases ALSA before GST takes over
+        if (dsd_engine_) {
+          dsd_engine_->Stop(/*stop_after*/ false);
+        }
+
+        dsd_active_ = false;
+        engine_->Play(req, stream_change_type_,
+                      item->Metadata().has_cue(),
+                      item->Metadata().beginning_nanosec(),
+                      item->Metadata().end_nanosec());
+      }
+
 
       current_item_ = item;
       loading_async_ = QUrl();
@@ -303,6 +396,13 @@ bool Player::HandleStopAfter() {
 }
 
 void Player::TrackEnded() {
+  //dsd_active_ = false;
+  if (QObject* s = sender()) {
+    if (s != ActiveEngine()) {
+      qLog(Debug) << "TrackEnded: ignoring signal from inactive engine";
+      return;
+    }
+  }
   if (HandleStopAfter()) return;
 
   if (current_item_ && current_item_->IsLocalLibraryItem() &&
@@ -319,37 +419,56 @@ void Player::TrackEnded() {
   NextInternal(Engine::Auto);
 }
 
-void Player::PlayPause() {
-  switch (engine_->state()) {
-    case Engine::Paused:
-      engine_->Unpause();
-      break;
 
-    case Engine::Playing: {
-      // We really shouldn't pause last.fm streams
-      // Stopping seems like a reasonable thing to do (especially on mac where
-      // there
-      // is no media key for stop).
-      if (current_item_->options() & PlaylistItem::PauseDisabled) {
-        Stop();
-      } else {
-        engine_->Pause();
-      }
-      break;
+//EngineBase* Player::ActiveEngine() const {
+  //return dsd_active_ ? static_cast<EngineBase*>(dsd_engine_.get())
+                     //: engine_.get();
+//}
+
+EngineBase* Player::ActiveEngine() const {
+  return dsd_active_ ? dsd_engine_.get()
+                     : engine_.get();
+}
+
+void Player::PlayPause() {
+  qLog(Debug) << "Player::PlayPause() pressed";
+
+  // If nothing is loaded yet, activate UI's current playlist and start the row
+  if (!current_item_) {
+    auto* pm = app_->playlist_manager();
+    pm->SetActivePlaylist(pm->current_id());
+    pm->SetCurrentPlaylist(pm->current_id());
+
+    auto* pl = pm->active();
+    int row = pl ? pl->current_row() : -1;
+    if (row < 0) {
+      // fallbacks: last played, then first row
+      if (pl) row = pl->last_played_row();
+      if (row < 0) row = 0;
+      if (pl) pl->set_current_row(row);
     }
 
-    case Engine::Empty:
-    case Engine::Error:
-    case Engine::Idle: {
-      app_->playlist_manager()->SetActivePlaylist(
-          app_->playlist_manager()->current_id());
-      if (app_->playlist_manager()->active()->rowCount() == 0) break;
-
-      int i = app_->playlist_manager()->active()->current_row();
-      if (i == -1) i = app_->playlist_manager()->active()->last_played_row();
-      if (i == -1) i = 0;
-
-      PlayAt(i, Engine::First, true);
+    qLog(Debug) << "PlayPause: activated playlist id=" << pm->current_id()
+                << " row=" << row;
+    PlayAt(row, Engine::Manual, /*reshuffle=*/false);
+    return;
+  }
+     
+  switch (ActiveEngine()->state()) {
+    case Engine::Paused:
+      ActiveEngine()->Unpause();
+      break;
+    case Engine::Playing:
+      ActiveEngine()->Pause();
+      break;
+    default: {
+      auto* pl = app_->playlist_manager()->active();
+      int row = pl ? pl->current_row() : -1;
+      if (row < 0) {
+        row = 0;
+        if (pl) pl->set_current_row(row);
+      }
+      PlayAt(row, Engine::Manual, /*reshuffle=*/false);
       break;
     }
   }
@@ -357,7 +476,6 @@ void Player::PlayPause() {
 
 void Player::RestartOrPrevious() {
   if (engine_->position_nanosec() < 8 * kNsecPerSec) return Previous();
-
   SeekTo(0);
 }
 
@@ -365,15 +483,15 @@ void Player::Stop(bool stop_after) {
 #ifdef HAVE_LIBLASTFM
   lastfm_->Scrobble();
 #endif
+  // Stop whichever engine is active; keep dsd_active_ unchanged so its signals are accepted.
+  ActiveEngine()->Stop(stop_after);
 
-  engine_->Stop(stop_after);
-  app_->playlist_manager()->active()->set_current_row(-1);
+  // Keep the playlist’s current row so Play resumes the highlighted song.
   current_item_.reset();
 }
 
 void Player::StopAfterCurrent() {
-  app_->playlist_manager()->active()->StopAfter(
-      app_->playlist_manager()->active()->current_row());
+  ActiveEngine()->Stop(true);
 }
 
 bool Player::PreviousWouldRestartTrack() const {
@@ -381,6 +499,12 @@ bool Player::PreviousWouldRestartTrack() const {
   return menu_previousmode_ == PreviousBehaviour_Restart &&
          last_pressed_previous_.isValid() &&
          last_pressed_previous_.secsTo(QDateTime::currentDateTime()) >= 2;
+}
+
+bool Player::IsDsdUrl(const QUrl& url) const {
+  const QString p = url.isLocalFile() ? url.toLocalFile() : url.toString();
+  const QString ext = QFileInfo(p).suffix().toLower();
+  return (ext == "dsf" || ext == "dff");
 }
 
 void Player::Previous() { PreviousItem(Engine::Manual); }
@@ -412,6 +536,13 @@ void Player::PreviousItem(Engine::TrackChangeFlags change) {
 }
 
 void Player::EngineStateChanged(Engine::State state) {
+  // Ignore state changes from the inactive engine (prevents spurious auto-advance)
+  if (QObject* s = sender()) {
+    if (s != ActiveEngine()) {
+      qLog(Debug) << "EngineStateChanged: ignoring signal from inactive engine";
+      return;
+    }
+  }	
   if (Engine::Error == state) {
     nb_errors_received_++;
   } else {
@@ -448,10 +579,36 @@ void Player::SetVolume(int value) {
 
 int Player::GetVolume() const { return engine_->volume(); }
 
+int Player::RowToPlayFromUI() const {
+  auto* pl = app_->playlist_manager()->active();
+  if (!pl) return 0;
+
+  int row = pl->current_row();
+  if (row >= 0) return row;
+
+  // Try first selected row if API exists
+  // NOTE: If your Playlist API uses a different name, adjust this.
+  // Common variants seen in Clementine forks: selected_rows(), selected_indices()
+  if constexpr (true) {
+    // Compile-time guard: if selected_rows() exists, use it.
+    // If your build errors here, just replace with your actual API or remove this block.
+  }
+
+  // Try to use selected_rows() if available:
+  // (Uncomment if your Playlist exposes it; it's present in many builds.)
+  // const QList<int> sel = pl->selected_rows();
+  // if (!sel.isEmpty()) return sel.first();
+
+  // Fallback: play the first row
+  return 0;
+}
+
+
 void Player::PlayAt(int index, Engine::TrackChangeFlags change,
                     bool reshuffle) {
   if (change == Engine::Manual &&
-      engine_->position_nanosec() != engine_->length_nanosec()) {
+    ActiveEngine()->position_nanosec() != ActiveEngine()->length_nanosec()) {
+//      engine_->position_nanosec() != engine_->length_nanosec()) {
     emit TrackSkipped(current_item_);
     const QUrl& url = current_item_->Url();
     if (url_handlers_.contains(url.scheme())) {
@@ -469,9 +626,30 @@ void Player::PlayAt(int index, Engine::TrackChangeFlags change,
   app_->playlist_manager()->active()->set_current_row(index);
 
   if (app_->playlist_manager()->active()->current_row() == -1) {
-    // Maybe index didn't exist in the playlist.
-    return;
+    qLog(Debug) << "PlayAt: current_row still -1 after set_current_row(" << index
+                << ") — trying to promote a non-empty playlist.";
+
+    // Try once to promote a non-empty playlist and retry
+    Playlist* pick = nullptr;
+    for (Playlist* p : app_->playlist_manager()->GetAllPlaylists()) {
+      if (p && p->rowCount() > 0) { pick = p; break; }
+    }
+    if (pick) {
+      app_->playlist_manager()->SetActivePlaylist(pick->id());
+      app_->playlist_manager()->SetCurrentPlaylist(pick->id());
+      int safe_index = (index >= 0 && index < pick->rowCount()) ? index : 0;
+      app_->playlist_manager()->active()->set_current_row(safe_index);
+      qLog(Debug) << "PlayAt: promoted playlist to"
+                  << app_->playlist_manager()->GetPlaylistName(pick->id())
+                  << " and set_current_row(" << safe_index << ")";
+    }
+
+    if (app_->playlist_manager()->active()->current_row() == -1) {
+      qLog(Debug) << "PlayAt: aborting – still no current row.";
+      return;
+    }
   }
+
 
   current_item_ = app_->playlist_manager()->active()->current_item();
   const QUrl url = current_item_->Url();
@@ -484,10 +662,93 @@ void Player::PlayAt(int index, Engine::TrackChangeFlags change,
     HandleLoadResult(url_handlers_[url.scheme()]->StartLoading(url));
   } else {
     loading_async_ = QUrl();
-    MediaPlaybackRequest req(current_item_->Url());
-    engine_->Play(req, change, current_item_->Metadata().has_cue(),
-                  current_item_->Metadata().beginning_nanosec(),
-                  current_item_->Metadata().end_nanosec());
+    
+	MediaPlaybackRequest req(current_item_->Url());
+
+	if (IsDsdUrl(req.MediaUrl())) {
+		if (engine_) {
+			engine_->Stop(false);
+
+			// NEW: wait up to ~1.5 s for GST to fully release ALSA
+			QElapsedTimer t; t.start();
+			while (t.elapsed() < 3000) {
+				QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+				if (engine_->state() == Engine::Empty) break;
+				QThread::msleep(20);
+			}
+			// tiny settle to let the sink thread close the fd
+			QThread::msleep(100);				
+		}
+	  
+		dsd_active_ = true;
+		{
+		  QElapsedTimer w; w.start();
+		  bool ok = false;
+		  while (w.elapsed() < 6500 && !ok) {
+			ok = dsd_engine_->Load(req, change,
+								   current_item_->Metadata().has_cue(),
+								   current_item_->Metadata().beginning_nanosec(),
+								   current_item_->Metadata().end_nanosec());
+			if (ok) break;
+			QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+			QThread::msleep(120);
+		  }
+		  if (!ok) {
+			qLog(Error) << "DSD: Load failed after waiting ALSA release; aborting Play()";
+			return;
+		  }
+		}
+ 	    // --- Push DSD duration to UI if the song metadata length is missing ---
+ 	    if (current_item_) {
+ 	      Song song = current_item_->Metadata();
+ 	      if (song.length_nanosec() <= 0) {
+ 	        const qint64 len_ns = dsd_engine_->length_nanosec();
+ 	        if (len_ns > 0) {
+ 	          song.set_length_nanosec(len_ns);
+ 	          current_item_->SetTemporaryMetadata(song);
+ 	          // Tell views/widgets the current song’s fields (incl. length) changed
+ 	          if (auto* pl = app_->playlist_manager()->active()) {
+ 	            pl->InformOfCurrentSongChange();
+ 	          }
+ 	        }
+ 	      }
+ 	    }		
+		// Force UI to refresh the progress bar immediately at 0:00 / known length
+		emit PositionChanged(0); 	    
+		qLog(Debug) << "Player: invoking DSD Play()";
+		dsd_engine_->Play(0);
+
+		// Push DSD duration to UI
+		const qint64 len_ns = dsd_engine_->length_nanosec();
+		if (len_ns > 0) {
+		  // Update current item metadata (you already added this)
+		  if (current_item_) {
+			Song s = current_item_->Metadata();
+			if (s.length_nanosec() <= 0) {
+			  s.set_length_nanosec(len_ns);
+			  current_item_->SetTemporaryMetadata(s);
+			  if (auto* pl = app_->playlist_manager()->active()) {
+				pl->InformOfCurrentSongChange();
+			  }
+			  //emit MetadataChanged(s);  // harmless extra nudge
+			}
+		  }
+		  // **Important:** also notify transport/UI directly
+		  //emit LengthNanosecChanged(len_ns);
+		  // Optional: start at 0 so the bar shows "0:00 / <dur>" immediately
+		  emit PositionChanged(0);
+		}		
+		
+		return;   // (only if this is the top-level branch)
+	} else {
+		if (dsd_engine_) {
+  dsd_engine_->Stop(/*stop_after*/ false);
+}
+	  dsd_active_ = false;
+	  engine_->Play(req, change, current_item_->Metadata().has_cue(),
+					current_item_->Metadata().beginning_nanosec(),
+					current_item_->Metadata().end_nanosec());
+	}
 
 #ifdef HAVE_LIBLASTFM
     if (lastfm_->IsScrobblingEnabled())
@@ -508,31 +769,21 @@ void Player::CurrentMetadataChanged(const Song& metadata) {
 }
 
 void Player::SeekTo(int seconds) {
-  const qint64 length_nanosec = engine_->length_nanosec();
-
-  // If the length is 0 then either there is no song playing, or the song isn't
-  // seekable.
-  if (length_nanosec <= 0) {
-    return;
-  }
-
-  const qint64 nanosec =
-      qBound(0ll, qint64(seconds) * kNsecPerSec, length_nanosec);
-  engine_->Seek(nanosec);
-
-  // If we seek the track we need to move the scrobble point
-  qLog(Info) << "Track seeked to" << nanosec << "ns - updating scrobble point";
-  app_->playlist_manager()->active()->UpdateScrobblePoint(nanosec);
-
-  emit Seeked(nanosec / 1000);
+  const qint64 length_nanosec = ActiveEngine()->length_nanosec();
+  if (length_nanosec <= 0) return;
+  const qint64 ns = qBound(0ll, qint64(seconds) * kNsecPerSec, length_nanosec);
+  ActiveEngine()->Seek(ns);
+  qLog(Info) << "Track seeked to" << ns << "ns - updating scrobble point";
+  app_->playlist_manager()->active()->UpdateScrobblePoint(ns);
+  emit Seeked(ns / 1000);
 }
 
 void Player::SeekForward() {
-  SeekTo(engine()->position_nanosec() / kNsecPerSec + seek_step_sec_);
+  SeekTo(ActiveEngine()->position_nanosec() / kNsecPerSec + seek_step_sec_);
 }
 
 void Player::SeekBackward() {
-  SeekTo(engine()->position_nanosec() / kNsecPerSec - seek_step_sec_);
+  SeekTo(ActiveEngine()->position_nanosec() / kNsecPerSec - seek_step_sec_);
 }
 
 void Player::EngineMetadataReceived(const Engine::SimpleMetaBundle& bundle) {
@@ -582,19 +833,37 @@ void Player::Mute() {
   }
 }
 
-void Player::Pause() { engine_->Pause(); }
+void Player::Pause() { 
+  ActiveEngine()->Pause(); 
+}
 
 void Player::Play() {
+  qLog(Debug) << "Player::Play() pressed";
   switch (GetState()) {
     case Engine::Playing:
       SeekTo(0);
       break;
     case Engine::Paused:
-      engine_->Unpause();
+      ActiveEngine()->Unpause();
       break;
-    default:
-      PlayPause();
+    default: {
+      auto* pm = app_->playlist_manager();
+      pm->SetActivePlaylist(pm->current_id());
+      pm->SetCurrentPlaylist(pm->current_id());
+
+      auto* pl = pm->active();
+      int row = pl ? pl->current_row() : -1;
+      if (row < 0) {
+        if (pl) row = pl->last_played_row();
+        if (row < 0) row = 0;
+        if (pl) pl->set_current_row(row);
+      }
+
+      qLog(Debug) << "Play(): activated playlist id=" << pm->current_id()
+                  << " row=" << row;
+      PlayAt(row, Engine::Manual, /*reshuffle=*/false);
       break;
+    }
   }
 }
 
@@ -670,6 +939,27 @@ void Player::TrackAboutToEnd() {
         break;
     }
   }
+  
+  // If the *next* item is DSD, do NOT let GST preload it — it would grab ALSA
+  // and block the native DSD engine at the hand-off.
+  
+  if (IsDsdUrl(req.MediaUrl())) {
+    qLog(Debug) << "TrackAboutToEnd: next track is DSD — stopping GST now to free ALSA";
+    //if (engine_ && engine_->state() != Engine::Empty) {
+    //  engine_->Stop(false);  // proactively release ALSA before the DSD engine opens it
+    //}
+    return;
+  }
+  
+  // --- Skip GST preloading if the upcoming track is DSD ---
+  // Prefer the resolved media URL if a handler provided one; otherwise use the request URL.
+  const QUrl next_url = !req.MediaUrl().isEmpty() ? req.MediaUrl() : req.RequestUrl();
+  if (IsDsdUrl(next_url)) {
+    qLog(Debug) << "TrackAboutToEnd: next track is DSD — skipping GST preloading";
+    return;
+  }
+  // --------------------------------------------------------
+    
   engine_->StartPreloading(req, next_item->Metadata().has_cue(),
                            next_item->Metadata().beginning_nanosec(),
                            next_item->Metadata().end_nanosec());
@@ -752,4 +1042,14 @@ void Player::UrlHandlerDestroyed(QObject* object) {
   if (!scheme.isEmpty()) {
     url_handlers_.remove(scheme);
   }
+}
+
+void Player::dummyLogPosition(qint64 us) {
+  //qLog(Debug) << "PLAYER relay got usec=" << us;
+}
+
+void Player::OnDsdPositionChanged(qint64 us) {
+  // One-shot proof that the Player is actually emitting what the UI listens to
+  //qLog(Debug) << "Player::OnDsdPositionChanged emit usec=" << us;
+  emit PositionChanged(us);
 }

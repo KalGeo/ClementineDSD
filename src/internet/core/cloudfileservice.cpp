@@ -209,7 +209,7 @@ void CloudFileService::ReadTagsFinished(TagReaderClient::ReplyType* reply,
 
 bool CloudFileService::IsSupportedMimeType(const QString& mime_type) const {
   return mime_type == "audio/ogg" || mime_type == "audio/mpeg" ||
-         mime_type == "audio/mp4" || mime_type == "audio/flac" ||
+         mime_type == "audio/mp4" || mime_type == "audio/flac" || mime_type == "audio/x-dsf" || mime_type == "audio/x-dff" ||
          mime_type == "audio/x-flac" || mime_type == "application/ogg" ||
          mime_type == "application/x-flac" || mime_type == "audio/x-ms-wma";
 }
@@ -225,6 +225,10 @@ QString CloudFileService::GuessMimeTypeForFile(const QString& filename) const {
     return "application/ogg";
   } else if (filename.endsWith(".flac", Qt::CaseInsensitive)) {
     return "application/x-flac";
+  } else if (filename.endsWith(".dsf", Qt::CaseInsensitive)) {
+	return "audio/x-dsf";
+  } else if (filename.endsWith(".dff", Qt::CaseInsensitive)) {
+    return "audio/x-dff";    
   } else if (filename.endsWith(".wma", Qt::CaseInsensitive)) {
     return "audio/x-ms-wma";
   }

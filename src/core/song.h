@@ -109,6 +109,8 @@ class Song {
     Type_Spc = 15,
     Type_VGM = 16,
     Type_APE = 17,
+    Type_Dsf = 18,
+    Type_Dff = 19,
     Type_Stream = 99,
   };
   static QString TextForFiletype(FileType type);

@@ -241,6 +241,8 @@ Transcoder::Transcoder(QObject* parent, const QString& settings_postfix)
 QList<TranscoderPreset> Transcoder::GetAllPresets() {
   QList<TranscoderPreset> ret;
   ret << PresetForFileType(Song::Type_Flac);
+  ret << PresetForFileType(Song::Type_Dsf);
+  ret << PresetForFileType(Song::Type_Dff);
   ret << PresetForFileType(Song::Type_Mp4);
   ret << PresetForFileType(Song::Type_Mpeg);
   ret << PresetForFileType(Song::Type_OggVorbis);
@@ -258,6 +260,10 @@ QString Transcoder::MimeType(CodecType type) {
       return QString();
     case Codec_Flac:
       return "audio/x-flac";
+    case Codec_Dsf:
+      return "audio/x-dsf";
+    case Codec_Dff:
+      return "audio/x-dff";
     case Codec_Mp4:
       return "audio/mpeg, mpegversion=(int)4";
     case Codec_Mp3:
@@ -278,6 +284,10 @@ TranscoderPreset Transcoder::PresetForFileType(Song::FileType type) {
   switch (type) {
     case Song::Type_Flac:
       return TranscoderPreset(type, tr("FLAC"), "flac", MimeType(Codec_Flac));
+    case Song::Type_Dsf:
+      return TranscoderPreset(type, tr("DSF"), "dsf", MimeType(Codec_Dsf));
+    case Song::Type_Dff:
+      return TranscoderPreset(type, tr("DFF"), "dff", MimeType(Codec_Dff));
     case Song::Type_Mp4:
       return TranscoderPreset(type, tr("M4A AAC"), "mp4", MimeType(Codec_Mp4),
                               "audio/mp4");

@@ -1,3 +1,4 @@
+set(CMAKE_AUTOMOC ON)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wall -Wno-sign-compare -Wno-deprecated-declarations -Wno-unused-local-typedefs -Wno-maybe-uninitialized")
@@ -140,6 +141,9 @@ set(SOURCES
   engines/gstelementdeleter.cpp
   engines/gstpipelinebase.cpp
   engines/pipelineview.cpp
+  
+  engines/dsdalsaengine.cpp
+  engines/dsdalsaengine.h
 
   globalsearch/digitallyimportedsearchprovider.cpp
   globalsearch/globalsearch.cpp

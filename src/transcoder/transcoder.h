@@ -58,7 +58,9 @@ class Transcoder : public QObject {
     Codec_Vorbis = 4,
     Codec_Speex = 5,
     Codec_Opus = 6,
-    Codec_Wma = 7
+    Codec_Wma = 7,
+    Codec_Dsf = 8,
+    Codec_Dff = 9
   };
 
   Transcoder(QObject* parent = nullptr, const QString& settings_postfix = "");

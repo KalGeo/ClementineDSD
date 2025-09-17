@@ -240,6 +240,8 @@ QStringList Mpris2::SupportedMimeTypes() const {
                                          << "audio/vorbis"
                                          << "audio/x-ape"
                                          << "audio/x-flac"
+                                         << "audio/x-dsf"
+                                         << "audio/x-dff"
                                          << "audio/x-mp3"
                                          << "audio/x-mpeg"
                                          << "audio/x-mpegurl"
