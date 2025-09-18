@@ -37,6 +37,11 @@ public:
   //void Seek(quint64) override {}
   void SeekTo(int seconds);   // wrapper for Player::SeekTo(int)
   Engine::State state() const override { return state_; }
+
+  // --- Experimental preload API ---
+  bool PreloadNext(const QUrl& media_url);
+  bool CommitPreload();
+  void CancelPreload();
   
   qint64 length_nanosec()   const override;
   qint64 position_nanosec() const override;
@@ -50,11 +55,14 @@ public:
 Q_SIGNALS:
 	void PositionChanged(qint64 usec);
 	void Seeked(qint64 usec);
+	void TrackEnded();
+	void TrackAboutToEnd();  // Emitted ~2 seconds before track ends for gapless preloading
   
 private:
-	// ---- helpers (declared here; implemented in .cpp) ----
-	static inline unsigned int MapDsdToAlsaRate(uint64_t dsd_hz);
-	static inline uint32_t    Pack32ToBeWord(const uint8_t* src4);
+  // ---- helpers (declared here; implemented in .cpp) ----
+  static inline unsigned int MapDsdToAlsaRate(uint64_t dsd_hz);
+  static inline uint32_t    Pack32ToBeWord(const uint8_t* src4);
+  bool ConfigureDevice();
 
 	bool OpenDevice(uint64_t dsd_rate_hz);
 	void CloseDevice();
@@ -130,6 +138,15 @@ private:
 
 	// Worker entry
 	void PlaybackLoop();
+  // --- Preload state (experimental) ---
+  QFile    preload_file_;
+  QUrl     preload_url_;
+  uint64_t preload_dsd_rate_hz_ = 0;
+  QString  preload_alsa_device_;
+  bool     preload_ready_ = false;
+  
+  // --- Gapless playback state ---
+  bool     track_about_to_end_emitted_ = false;
 
 
 	bool primed_data_pos_ = false;

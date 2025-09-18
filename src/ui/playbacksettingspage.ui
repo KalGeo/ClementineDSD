@@ -307,14 +307,14 @@
       <item row="2" column="0">
        <widget class="QLabel" name="alsa_device_label">
         <property name="text">
-         <string>ALSA device (e.g., hw:1,0)</string>
+         <string>ALSA device</string>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
        <widget class="QComboBox" name="alsa_device_combo">
         <property name="toolTip">
-         <string></string>
+         <string>Select an ALSA hardware device</string>
         </property>
         <property name="sizeAdjustPolicy">
          <enum>QComboBox::AdjustToContents</enum>
@@ -463,6 +463,16 @@
         </property>
         <property name="text">
          <string>Mono playback</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0" colspan="2">
+       <widget class="QCheckBox" name="dsd_preload_experimental">
+        <property name="toolTip">
+         <string>Preload next DSD file to reduce transition delay between tracks</string>
+        </property>
+        <property name="text">
+         <string>Preload next DSD track</string>
         </property>
        </widget>
       </item>

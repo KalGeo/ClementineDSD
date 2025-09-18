@@ -121,6 +121,54 @@ uint32_t DsdAlsaEngine::Pack32ToBeWord(const uint8_t* src4) {
   return htonl(v); // ensure BE in memory on little-endian hosts
 }
 
+bool DsdAlsaEngine::ConfigureDevice() {
+  snd_pcm_hw_params_t* hw = nullptr;
+  
+  snd_pcm_hw_params_malloc(&hw);
+  snd_pcm_hw_params_any(pcm_, hw);
+  snd_pcm_hw_params_set_access(pcm_, hw, SND_PCM_ACCESS_RW_INTERLEAVED);
+  snd_pcm_hw_params_set_channels(pcm_, hw, 2);
+  snd_pcm_hw_params_set_format(pcm_, hw, SND_PCM_FORMAT_DSD_U32_BE);
+
+  // generous buffers to avoid underruns
+  snd_pcm_uframes_t period = 4096;
+  snd_pcm_uframes_t buffer = period * 4;
+  snd_pcm_hw_params_set_period_size_near(pcm_, hw, &period, 0);
+  snd_pcm_hw_params_set_buffer_size_near(pcm_, hw, &buffer);
+  snd_pcm_hw_params_set_rate_near(pcm_, hw, &alsa_rate_, 0);
+  int err = snd_pcm_hw_params(pcm_, hw);
+  snd_pcm_hw_params_free(hw);
+  if (err < 0) {
+    qLog(Error) << "snd_pcm_hw_params:" << snd_strerror(err);
+    return false;
+  }
+
+  // Query actual buffer/period chosen by ALSA
+  snd_pcm_uframes_t actual_buffer = 0, actual_period = 0;
+  snd_pcm_get_params(pcm_, &actual_buffer, &actual_period);
+
+  // Prepare device
+  snd_pcm_prepare(pcm_);
+
+  // Software params: start as soon as we have one period; wake on a period
+  snd_pcm_sw_params_t* sw = nullptr;
+  snd_pcm_sw_params_malloc(&sw);
+  snd_pcm_sw_params_current(pcm_, sw);
+  snd_pcm_sw_params_set_start_threshold(pcm_, sw, actual_period);
+  snd_pcm_sw_params_set_avail_min(pcm_, sw, actual_period);
+  snd_pcm_sw_params(pcm_, sw);
+  snd_pcm_sw_params_free(sw);
+
+  // Blocking IO
+  snd_pcm_nonblock(pcm_, 0);
+
+  qLog(Debug) << "ALSA configured: rate" << alsa_rate_
+              << " fmt DSD_U32_BE ch 2"
+              << " (buffer=" << actual_buffer
+              << ", period=" << actual_period << ")";           
+  return true;
+}
+
 bool DsdAlsaEngine::OpenDevice(uint64_t dsd_rate_hz) {
     alsa_rate_ = MapDsdToAlsaRate(dsd_rate_hz);
     if (alsa_rate_ > 0 && length_nanosec_ > 0) {
@@ -159,52 +207,7 @@ bool DsdAlsaEngine::OpenDevice(uint64_t dsd_rate_hz) {
     return false;
   }
 
-  snd_pcm_hw_params_t* hw = nullptr;
-  
-  snd_pcm_hw_params_malloc(&hw);
-  snd_pcm_hw_params_any(pcm_, hw);
-  snd_pcm_hw_params_set_access(pcm_, hw, SND_PCM_ACCESS_RW_INTERLEAVED);
-  snd_pcm_hw_params_set_channels(pcm_, hw, 2);
-  snd_pcm_hw_params_set_format(pcm_, hw, SND_PCM_FORMAT_DSD_U32_BE);
-
-  // generous buffers to avoid underruns
-  snd_pcm_uframes_t period = 4096;
-  snd_pcm_uframes_t buffer = period * 4;
-  snd_pcm_hw_params_set_period_size_near(pcm_, hw, &period, 0);
-  snd_pcm_hw_params_set_buffer_size_near(pcm_, hw, &buffer);
-  snd_pcm_hw_params_set_rate_near(pcm_, hw, &alsa_rate_, 0);
-  err = snd_pcm_hw_params(pcm_, hw);
-  snd_pcm_hw_params_free(hw);
-  if (err < 0) {
-    qLog(Error) << "snd_pcm_hw_params:" << snd_strerror(err);
-    snd_pcm_close(pcm_); pcm_ = nullptr;
-    return false;
-  }
-
-  // Query actual buffer/period chosen by ALSA
-  snd_pcm_uframes_t actual_buffer = 0, actual_period = 0;
-  snd_pcm_get_params(pcm_, &actual_buffer, &actual_period);
-
-  // Prepare device
-  snd_pcm_prepare(pcm_);
-
-  // Software params: start as soon as we have one period; wake on a period
-  snd_pcm_sw_params_t* sw = nullptr;
-  snd_pcm_sw_params_malloc(&sw);
-  snd_pcm_sw_params_current(pcm_, sw);
-  snd_pcm_sw_params_set_start_threshold(pcm_, sw, actual_period);
-  snd_pcm_sw_params_set_avail_min(pcm_, sw, actual_period);
-  snd_pcm_sw_params(pcm_, sw);
-  snd_pcm_sw_params_free(sw);
-
-  // Blocking IO
-  snd_pcm_nonblock(pcm_, 0);
-
-  qLog(Debug) << "ALSA ready: rate" << alsa_rate_
-              << " fmt DSD_U32_BE ch 2"
-              << " (buffer=" << actual_buffer
-              << ", period=" << actual_period << ")";           
-  return true;
+  return ConfigureDevice();
 }
 
 void DsdAlsaEngine::CloseDevice() {
@@ -695,6 +698,7 @@ bool DsdAlsaEngine::Load(const MediaPlaybackRequest& req,
                          qint64 /*end_nanosec*/) {
   Stop(false);                 // this sets stop_flag_ = true
   stop_flag_ = false;
+  track_about_to_end_emitted_ = false;  // Reset for new track
   
   dbg_quota_play_frames     = 3;
   dbg_quota_fetch_refills   = 3;
@@ -705,6 +709,245 @@ bool DsdAlsaEngine::Load(const MediaPlaybackRequest& req,
   //state_ = Engine::Paused;
   //emit StateChanged(state_);
   return true;
+}
+
+// --- Experimental DSD preloading ---
+bool DsdAlsaEngine::PreloadNext(const QUrl& media_url) {
+  // Only allow one preload at a time
+  CancelPreload();
+
+  // Open and parse file headers to know dsd_rate/etc., but do NOT open ALSA yet
+  preload_url_ = media_url;
+  preload_file_.setFileName(media_url.isLocalFile() ? media_url.toLocalFile() : media_url.toString());
+  if (!preload_file_.open(QIODevice::ReadOnly)) {
+    qLog(Warning) << "DSD Preload: cannot open" << preload_file_.fileName();
+    preload_url_ = QUrl();
+    return false;
+  }
+
+  // Parse the preload file independently without touching the main file_
+  // We'll reuse the parsing logic by temporarily creating a separate parser state
+  QFile temp_file;
+  temp_file.setFileName(preload_file_.fileName());
+  if (!temp_file.open(QIODevice::ReadOnly)) {
+    preload_file_.close();
+    preload_url_ = QUrl();
+    return false;
+  }
+
+  // Parse headers to get DSD rate and other info
+  // This is a simplified version of OpenFile() that only reads headers
+  auto rd_u32_le = [&](qint64 off)->uint32_t {
+    unsigned char b[4];
+    if (!temp_file.seek(off) || temp_file.read(reinterpret_cast<char*>(b), 4) != 4) return 0;
+    return uint32_t(b[0]) | (uint32_t(b[1])<<8) | (uint32_t(b[2])<<16) | (uint32_t(b[3])<<24);
+  };
+  auto rd_u64_le = [&](qint64 off)->uint64_t {
+    unsigned char b[8];
+    if (!temp_file.seek(off) || temp_file.read(reinterpret_cast<char*>(b), 8) != 8) return 0;
+    uint64_t v=0; for (int i=7;i>=0;--i) v=(v<<8) | b[i]; return v;
+  };
+  auto rd_id4 = [&](qint64 off, char id[4])->bool {
+    if (!temp_file.seek(off)) return false;
+    return temp_file.read(id, 4) == 4;
+  };
+
+  const qint64 fsize = temp_file.size();
+  if (fsize < 64) { 
+    temp_file.close();
+    preload_file_.close();
+    preload_url_ = QUrl();
+    return false; 
+  }
+
+  char id[4];
+  if (!rd_id4(0, id)) { 
+    temp_file.close();
+    preload_file_.close();
+    preload_url_ = QUrl();
+    return false; 
+  }
+
+  uint32_t srate = 0;
+  uint32_t ch_num = 0;
+
+  // Parse DSF format (simplified)
+  if (std::memcmp(id, "DSD ", 4) == 0) {
+    uint64_t dsd_chunk_size = rd_u64_le(4);
+    if (dsd_chunk_size < 12 || dsd_chunk_size > (uint64_t)fsize) {
+      temp_file.close();
+      preload_file_.close();
+      preload_url_ = QUrl();
+      return false;
+    }
+
+    qint64 off = (qint64)dsd_chunk_size;
+    bool have_fmt = false;
+
+    while (off + 12 <= fsize) {
+      if (!rd_id4(off, id)) break;
+      uint64_t csize = rd_u64_le(off + 4);
+      if (csize < 12 || off + (qint64)csize > fsize) break;
+
+      if (std::memcmp(id, "fmt ", 4) == 0) {
+        const qint64 fp = off + 12;
+        ch_num = rd_u32_le(fp + 12);
+        srate = rd_u32_le(fp + 16);
+        have_fmt = true;
+        break;
+      }
+      off += (qint64)csize;
+    }
+
+    if (!have_fmt || ch_num != 2) {
+      temp_file.close();
+      preload_file_.close();
+      preload_url_ = QUrl();
+      return false;
+    }
+  } else {
+    // Unsupported format
+    temp_file.close();
+    preload_file_.close();
+    preload_url_ = QUrl();
+    return false;
+  }
+
+  temp_file.close();
+
+  // Stash minimal info to validate at Commit time
+  preload_ready_ = true;
+  preload_dsd_rate_hz_ = srate;
+  preload_alsa_device_.clear();
+  
+  qLog(Debug) << "DSD Preload: parsed" << preload_file_.fileName() << "rate:" << srate;
+  return true;
+}
+
+bool DsdAlsaEngine::CommitPreload() {
+  if (!preload_ready_ || !preload_file_.isOpen()) return false;
+
+  // FAST HANDOFF: Open new device before closing old one to minimize gap
+  QUrl url = preload_url_;
+  QString preload_filename = preload_file_.fileName();
+  
+  // Parse the preloaded file to get DSD rate
+  QFile temp_file(preload_filename);
+  if (!temp_file.open(QIODevice::ReadOnly)) {
+    preload_file_.close();
+    preload_url_ = QUrl();
+    return false;
+  }
+  
+  // Quick header parse to get DSD rate (reuse existing logic)
+  auto rd_u32_le = [&](qint64 off)->uint32_t {
+    unsigned char b[4];
+    if (!temp_file.seek(off) || temp_file.read(reinterpret_cast<char*>(b), 4) != 4) return 0;
+    return uint32_t(b[0]) | (uint32_t(b[1])<<8) | (uint32_t(b[2])<<16) | (uint32_t(b[3])<<24);
+  };
+  auto rd_u64_le = [&](qint64 off)->uint64_t {
+    unsigned char b[8];
+    if (!temp_file.seek(off) || temp_file.read(reinterpret_cast<char*>(b), 8) != 8) return 0;
+    uint64_t v=0; for (int i=7;i>=0;--i) v=(v<<8) | b[i]; return v;
+  };
+  auto rd_id4 = [&](qint64 off, char id[4])->bool {
+    if (!temp_file.seek(off)) return false;
+    return temp_file.read(id, 4) == 4;
+  };
+
+  char id[4];
+  if (!rd_id4(0, id) || std::memcmp(id, "DSD ", 4) != 0) {
+    temp_file.close();
+    preload_file_.close();
+    preload_url_ = QUrl();
+    return false;
+  }
+
+  uint64_t dsd_chunk_size = rd_u64_le(4);
+  qint64 off = (qint64)dsd_chunk_size;
+  bool have_fmt = false;
+  uint32_t srate = 0;
+
+  while (off + 12 <= temp_file.size()) {
+    if (!rd_id4(off, id)) break;
+    uint64_t csize = rd_u64_le(off + 4);
+    if (csize < 12 || off + (qint64)csize > temp_file.size()) break;
+
+    if (std::memcmp(id, "fmt ", 4) == 0) {
+      const qint64 fp = off + 12;
+      srate = rd_u32_le(fp + 16);
+      have_fmt = true;
+      break;
+    }
+    off += (qint64)csize;
+  }
+  temp_file.close();
+
+  if (!have_fmt || srate == 0) {
+    preload_file_.close();
+    preload_url_ = QUrl();
+    return false;
+  }
+
+  // FAST HANDOFF: Open new device before closing old one
+  track_about_to_end_emitted_ = false;
+  
+  snd_pcm_t* new_pcm = nullptr;
+  int err = snd_pcm_open(&new_pcm, "hw:1,0", SND_PCM_STREAM_PLAYBACK, 0);
+  
+  if (err == 0) {
+    // Successfully opened new device, now close old one quickly
+    Stop(false);
+    
+    // Transfer the new device to main pcm_
+    pcm_ = new_pcm;
+    
+    // Switch main file_ to preloaded one
+    file_.close();
+    file_.setFileName(preload_filename);
+    preload_file_.close(); // Transfer ownership
+    
+    preload_ready_ = false;
+    preload_url_ = QUrl();
+
+    if (!OpenFile(url)) { 
+      qLog(Warning) << "DSD CommitPreload: OpenFile failed";
+      return false; 
+    }
+    
+    // Configure the already-opened device
+    dsd_rate_hz_ = srate;
+    if (!ConfigureDevice()) { 
+      qLog(Warning) << "DSD CommitPreload: ConfigureDevice failed";
+      CloseDevice(); 
+      return false; 
+    }
+    
+    qLog(Debug) << "DSD: Fast handoff successful, rate:" << srate;
+    return true;
+  } else {
+    // Fallback to normal handoff
+    qLog(Debug) << "DSD: Fast handoff failed, using normal handoff";
+    Stop(false);
+    track_about_to_end_emitted_ = false;
+
+    file_.close();
+    file_.setFileName(preload_filename);
+    preload_file_.close();
+    
+    preload_ready_ = false;
+    preload_url_ = QUrl();
+
+    if (!OpenFile(url)) { CloseFile(); return false; }
+    if (!OpenDevice(dsd_rate_hz_)) { CloseFile(); return false; }
+    return true;
+  }
+}
+
+void DsdAlsaEngine::CancelPreload() {
+  preload_ready_ = false;
+  preload_url_ = QUrl();
+  if (preload_file_.isOpen()) preload_file_.close();
 }
 
 void DsdAlsaEngine::PlaybackLoop() {
@@ -806,7 +1049,26 @@ void DsdAlsaEngine::PlaybackLoop() {
     const uint8_t* L = nullptr;
     const uint8_t* R = nullptr;
     size_t got = FetchDsdFrames(chunk_frames, &L, &R);
-    if (got == 0) break;
+    if (got == 0) {
+      // Check if we reached natural EOF (no more data)
+      if (data_bytes_ <= 0) {
+        natural_eof_ = true;
+        qLog(Debug) << "DSD: reached natural EOF, data_bytes_=" << data_bytes_;
+      }
+      break;
+    }
+
+    // ---- 1.5) CHECK FOR TRACK ABOUT TO END (for gapless preloading) ----
+    // Emit TrackAboutToEnd when we have ~300ms of data left (closer to actual end)
+    if (!track_about_to_end_emitted_ && length_nanosec_ > 0) {
+      const qint64 remaining_ns = length_nanosec_ - position_nanosec();
+      const qint64 three_hundred_ms_ns = 300000000LL; // 300ms
+      if (remaining_ns <= three_hundred_ms_ns) {
+        track_about_to_end_emitted_ = true;
+        emit TrackAboutToEnd();
+        qLog(Debug) << "DSD: TrackAboutToEnd emitted, remaining:" << (remaining_ns / 1000000) << "ms";
+      }
+    }
 
     // Throttled debug (optional; keep if you added quotas)
     // if (dbg_quota_play_frames-- > 0) qLog(Debug) << "DSD chunk frames:" << got;
@@ -893,6 +1155,7 @@ qLog(Debug) << "DSD length(ns)=" << length_nanosec()
  		// Mark that we reached natural EOF; Player may call Stop() during hand-off.
  		natural_eof_ = true;
  		// ALSA/File are closed; now tell Player to advance.
+ 		qLog(Debug) << "DSD: emitting TrackEnded for natural EOF";
  		emit TrackEnded();
  	} else {
  		// Stop(true) = Next/Previous → μην δείχνεις 'Stopped' εδώ.
@@ -901,25 +1164,32 @@ qLog(Debug) << "DSD length(ns)=" << length_nanosec()
  			emit StateChanged(state_);
  		}
  		qLog(Debug) << "DSD: stopped by user or track-change; not emitting TrackEnded";
-
-	}	
+ 	}
+	
 	running_ = false;
 }
 
 
 
 bool DsdAlsaEngine::Play(quint64 /*offset_nanosec*/) {
-  if (!pcm_) return false;
+  qLog(Debug) << "DsdAlsaEngine::Play() ENTER - pcm_=" << (pcm_ ? "valid" : "null") << " running_=" << running_;
+  
+  if (!pcm_) {
+    qLog(Warning) << "DsdAlsaEngine::Play() failed: no ALSA device";
+    return false;
+  }
 
   // Fresh start
   stop_flag_ = false;
 
   // Join any previous worker that might still be joinable
   if (playback_thread_.joinable()) {
+    qLog(Debug) << "DsdAlsaEngine::Play() joining previous thread";
     playback_thread_.join();
   }
 
   if (running_) {
+    qLog(Debug) << "DsdAlsaEngine::Play() already running, returning true";
     // already playing
     return true;
   }
@@ -927,7 +1197,7 @@ bool DsdAlsaEngine::Play(quint64 /*offset_nanosec*/) {
 
   state_ = Engine::Playing;
   emit StateChanged(state_);
-  qLog(Debug) << "DsdAlsaEngine::Play() ENTER";
+  qLog(Debug) << "DsdAlsaEngine::Play() starting new playback thread";
 
   playback_thread_ = std::thread([this]{
     this->PlaybackLoop();

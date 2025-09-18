@@ -111,6 +111,7 @@ void PlaybackSettingsPage::Load() {
   QVariant device = s.value("device");
   bool alsa_exclusive = s.value("alsa_exclusive", false).toBool();
   QString alsa_device = s.value("alsa_device", QString()).toString();
+  bool dsd_preload = s.value("dsd_preload_experimental", false).toBool();
 
   ui_->gst_output->setCurrentIndex(0);
   for (int i = 0; i < ui_->gst_output->count(); ++i) {
@@ -141,6 +142,7 @@ void PlaybackSettingsPage::Load() {
   ui_->alsa_exclusive->setChecked(alsa_exclusive);
   ui_->alsa_device_label->setEnabled(alsa_exclusive);
   ui_->alsa_device_combo->setEnabled(alsa_exclusive);
+  ui_->dsd_preload_experimental->setChecked(dsd_preload);
 
   // Populate ALSA devices list using AlsaDeviceFinder directly
   QList<DeviceFinder::Device> alsa_devices;
@@ -201,6 +203,7 @@ void PlaybackSettingsPage::Save() {
     s.setValue("sink", details.gstreamer_plugin_name);
     s.setValue("device", details.device_property_value);
   }
+  s.setValue("dsd_preload_experimental", ui_->dsd_preload_experimental->isChecked());
   s.setValue("rgenabled", ui_->replaygain->isChecked());
   s.setValue("rgmode", ui_->replaygain_mode->currentIndex());
   s.setValue("rgpreamp", float(ui_->replaygain_preamp->value()) / 10 - 15);

@@ -95,8 +95,11 @@ connect(dsd_engine_.get(), SIGNAL(Error(QString)),
 connect(dsd_engine_.get(), SIGNAL(StateChanged(Engine::State)),
         this, SLOT(EngineStateChanged(Engine::State)), Qt::QueuedConnection);     
 
-connect(dsd_engine_.get(), &Engine::Base::TrackEnded,
-        this, [this](){ this->TrackEnded(); }, Qt::QueuedConnection);
+connect(dsd_engine_.get(), SIGNAL(TrackEnded()),
+        this, SLOT(TrackEnded()), Qt::QueuedConnection);
+
+connect(dsd_engine_.get(), SIGNAL(TrackAboutToEnd()),
+        this, SLOT(TrackAboutToEnd()), Qt::QueuedConnection);
 
 connect(dsd_engine_.get(), SIGNAL(PositionChanged(qint64)),
         this, SLOT(OnDsdPositionChanged(qint64)));
@@ -397,7 +400,9 @@ bool Player::HandleStopAfter() {
 
 void Player::TrackEnded() {
   //dsd_active_ = false;
+  qLog(Debug) << "Player::TrackEnded() START";
   if (QObject* s = sender()) {
+    qLog(Debug) << "TrackEnded: sender=" << s << " ActiveEngine=" << ActiveEngine() << " dsd_active_=" << dsd_active_;
     if (s != ActiveEngine()) {
       qLog(Debug) << "TrackEnded: ignoring signal from inactive engine";
       return;
@@ -416,7 +421,9 @@ void Player::TrackEnded() {
         current_item_->Metadata().id());
   }
 
+  qLog(Debug) << "Player::TrackEnded() calling NextInternal()";
   NextInternal(Engine::Auto);
+  qLog(Debug) << "Player::TrackEnded() END";
 }
 
 
@@ -666,7 +673,8 @@ void Player::PlayAt(int index, Engine::TrackChangeFlags change,
 	MediaPlaybackRequest req(current_item_->Url());
 
 	if (IsDsdUrl(req.MediaUrl())) {
-		if (engine_) {
+		// Only stop GStreamer engine if we're not already using DSD
+		if (engine_ && !dsd_active_) {
 			engine_->Stop(false);
 
 			// NEW: wait up to ~1.5 s for GST to fully release ALSA
@@ -685,10 +693,18 @@ void Player::PlayAt(int index, Engine::TrackChangeFlags change,
 		  QElapsedTimer w; w.start();
 		  bool ok = false;
 		  while (w.elapsed() < 6500 && !ok) {
-			ok = dsd_engine_->Load(req, change,
+			// Try to commit preloaded file first, fallback to normal Load
+			qLog(Debug) << "Player: attempting CommitPreload()";
+			if (dsd_engine_->CommitPreload()) {
+			  ok = true;
+			  qLog(Debug) << "DSD: Using preloaded file";
+			} else {
+			  qLog(Debug) << "Player: CommitPreload failed, trying normal Load()";
+			  ok = dsd_engine_->Load(req, change,
 								   current_item_->Metadata().has_cue(),
 								   current_item_->Metadata().beginning_nanosec(),
 								   current_item_->Metadata().end_nanosec());
+			}
 			if (ok) break;
 			QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 			QThread::msleep(120);
@@ -716,7 +732,8 @@ void Player::PlayAt(int index, Engine::TrackChangeFlags change,
 		// Force UI to refresh the progress bar immediately at 0:00 / known length
 		emit PositionChanged(0); 	    
 		qLog(Debug) << "Player: invoking DSD Play()";
-		dsd_engine_->Play(0);
+		bool play_result = dsd_engine_->Play(0);
+		qLog(Debug) << "Player: DSD Play() returned:" << play_result;
 
 		// Push DSD duration to UI
 		const qint64 len_ns = dsd_engine_->length_nanosec();
@@ -944,10 +961,18 @@ void Player::TrackAboutToEnd() {
   // and block the native DSD engine at the hand-off.
   
   if (IsDsdUrl(req.MediaUrl())) {
-    qLog(Debug) << "TrackAboutToEnd: next track is DSD — stopping GST now to free ALSA";
-    //if (engine_ && engine_->state() != Engine::Empty) {
-    //  engine_->Stop(false);  // proactively release ALSA before the DSD engine opens it
-    //}
+    qLog(Debug) << "TrackAboutToEnd: next track is DSD";
+    // If experimental DSD preload is enabled, ask DSD engine to preload headers
+    QSettings s;
+    s.beginGroup(GstEngine::kSettingsGroup);
+    const bool dsd_preload = s.value("dsd_preload_experimental", false).toBool();
+    s.endGroup();
+
+    if (dsd_preload && dsd_engine_) {
+      // Don't stop GST yet; just avoid starting a new preload on GST
+      const QUrl next_url = !req.MediaUrl().isEmpty() ? req.MediaUrl() : req.RequestUrl();
+      dsd_engine_->PreloadNext(next_url);
+    }
     return;
   }
   
