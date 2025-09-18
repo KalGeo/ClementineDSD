@@ -22,6 +22,7 @@
 #include <asffile.h>
 #include <attachedpictureframe.h>
 #include <commentsframe.h>
+#include <dsffile.h>
 #include <fileref.h>
 #include <flacfile.h>
 #include <id3v2tag.h>
@@ -371,6 +372,103 @@ void TagReader::ReadFile(const QString& filename,
           }
           if (song->playcount() <= 0 && frame->counter() > 0) {
             song->set_playcount(frame->counter());
+          }
+        }
+      }
+    }
+  } else if (TagLib::DSF::File* file =
+                 dynamic_cast<TagLib::DSF::File*>(fileref->file())) {
+    if (file->tag()) {
+      TagLib::ID3v2::Tag* tag = dynamic_cast<TagLib::ID3v2::Tag*>(file->tag());
+      if (tag) {
+        const TagLib::ID3v2::FrameListMap& map = tag->frameListMap();
+
+        if (!map["TPOS"].isEmpty())
+          disc = TStringToQString(map["TPOS"].front()->toString()).trimmed();
+
+        if (!map["TBPM"].isEmpty())
+          song->set_bpm(TStringToQString(map["TBPM"].front()->toString())
+                            .trimmed()
+                            .toFloat());
+
+        if (!map["TCOM"].isEmpty())
+          Decode(map["TCOM"].front()->toString(), nullptr,
+                 song->mutable_composer());
+
+        if (!map["TIT1"].isEmpty())  // content group
+          Decode(map["TIT1"].front()->toString(), nullptr,
+                 song->mutable_grouping());
+
+        if (!map["TOPE"].isEmpty())  // original artist/performer
+          Decode(map["TOPE"].front()->toString(), nullptr,
+                 song->mutable_performer());
+
+        // Skip TPE1 (which is the artist) here because we already fetched it
+
+        if (!map["TPE2"].isEmpty())  // non-standard: Apple, Microsoft
+          Decode(map["TPE2"].front()->toString(), nullptr,
+                 song->mutable_albumartist());
+
+        if (!map["TCMP"].isEmpty())
+          compilation =
+              TStringToQString(map["TCMP"].front()->toString()).trimmed();
+
+        if (!map["TDOR"].isEmpty()) {
+          song->set_originalyear(
+              map["TDOR"].front()->toString().substr(0, 4).toInt());
+        } else if (!map["TORY"].isEmpty()) {
+          song->set_originalyear(
+              map["TORY"].front()->toString().substr(0, 4).toInt());
+        }
+
+        if (!map["USLT"].isEmpty()) {
+          Decode(map["USLT"].front()->toString(), nullptr,
+                 song->mutable_lyrics());
+        } else if (!map["SYLT"].isEmpty()) {
+          Decode(map["SYLT"].front()->toString(), nullptr,
+                 song->mutable_lyrics());
+        }
+
+        if (!map["APIC"].isEmpty()) song->set_art_automatic(kEmbeddedCover);
+
+        // Find a suitable comment tag.  For now we ignore iTunNORM comments.
+        for (int i = 0; i < map["COMM"].size(); ++i) {
+          const TagLib::ID3v2::CommentsFrame* frame =
+              dynamic_cast<const TagLib::ID3v2::CommentsFrame*>(map["COMM"][i]);
+
+          if (frame && TStringToQString(frame->description()) != "iTunNORM") {
+            Decode(frame->text(), nullptr, song->mutable_comment());
+            break;
+          }
+        }
+
+        // Check FMPS frames
+        for (int i = 0; i < map["TXXX"].size(); ++i) {
+          const TagLib::ID3v2::UserTextIdentificationFrame* frame =
+              dynamic_cast<const TagLib::ID3v2::UserTextIdentificationFrame*>(
+                  map["TXXX"][i]);
+
+          if (frame && frame->description().startsWith("FMPS_")) {
+            ParseFMPSFrame(TStringToQString(frame->description()),
+                           TStringToQString(frame->fieldList()[1]), song);
+          }
+        }
+
+        // Check POPM tags
+        // We do this after checking FMPS frames, so FMPS have precedence, as we
+        // will consider POPM tags iff song has no rating/playcount already set.
+        if (!map["POPM"].isEmpty()) {
+          const TagLib::ID3v2::PopularimeterFrame* frame =
+              dynamic_cast<TagLib::ID3v2::PopularimeterFrame*>(
+                  map["POPM"].front());
+          if (frame) {
+            // Take a user rating only if there's no rating already set
+            if (song->rating() <= 0 && frame->rating() > 0) {
+              song->set_rating(ConvertPOPMRating(frame->rating()));
+            }
+            if (song->playcount() <= 0 && frame->counter() > 0) {
+              song->set_playcount(frame->counter());
+            }
           }
         }
       }
@@ -803,6 +901,8 @@ cpb::tagreader::SongMetadata_Type TagReader::GuessFileType(
     return cpb::tagreader::SongMetadata_Type_WAVPACK;
   if (dynamic_cast<TagLib::APE::File*>(fileref->file()))
     return cpb::tagreader::SongMetadata_Type_APE;
+  if (dynamic_cast<TagLib::DSF::File*>(fileref->file()))
+    return cpb::tagreader::SongMetadata_Type_DSF;
 
   return cpb::tagreader::SongMetadata_Type_UNKNOWN;
 }
@@ -902,6 +1002,23 @@ bool TagReader::SaveFile(const QString& filename,
   } else if (TagLib::WavPack::File* file =
                  dynamic_cast<TagLib::WavPack::File*>(fileref->file())) {
     saveApeTag(file->APETag(true));
+  } else if (TagLib::DSF::File* file =
+                 dynamic_cast<TagLib::DSF::File*>(fileref->file())) {
+    // DSF files use ID3v2 tags, so we can save all metadata using ID3v2 frames
+    TagLib::ID3v2::Tag* tag = dynamic_cast<TagLib::ID3v2::Tag*>(file->tag());
+    if (tag) {
+      SetTextFrame("TBPM",
+                   song.bpm() <= 0 - 1 ? QString() : QString::number(song.bpm()),
+                   tag);
+      SetTextFrame("TCOM", song.composer(), tag);
+      SetTextFrame("TIT1", song.grouping(), tag);
+      SetTextFrame("TOPE", song.performer(), tag);
+      SetUnsyncLyricsFrame(song.lyrics(), tag);
+      // Skip TPE1 (which is the artist) here because we already set it
+      SetTextFrame("TPE2", song.albumartist(), tag);
+      SetTextFrame("TCMP", song.compilation() ? QString::number(1) : QString(),
+                   tag);
+    }
   }
 
   // Handle all the files which have VorbisComments (Ogg, OPUS, ...) in the same
@@ -1090,6 +1207,18 @@ bool TagReader::SaveSongRatingToFile(
   } else if (TagLib::WavPack::File* file =
                  dynamic_cast<TagLib::WavPack::File*>(fileref->file())) {
     saveApeSongRating(file->APETag(true));
+  } else if (TagLib::DSF::File* file =
+                 dynamic_cast<TagLib::DSF::File*>(fileref->file())) {
+    // DSF files use ID3v2 tags, so we can save rating using ID3v2 frames
+    TagLib::ID3v2::Tag* tag = dynamic_cast<TagLib::ID3v2::Tag*>(file->tag());
+    if (tag) {
+      // Save as FMPS
+      SetUserTextFrame("FMPS_Rating", QString::number(song.rating()), tag);
+      
+      // Also save as POPM
+      TagLib::ID3v2::PopularimeterFrame* frame = GetPOPMFrameFromTag(tag);
+      frame->setRating(ConvertToPOPMRating(song.rating()));
+    }
   } else {
     // Nothing to save: stop now
     return true;
@@ -1358,6 +1487,20 @@ QByteArray TagReader::LoadEmbeddedArt(const QString& filename) const {
       dynamic_cast<TagLib::WavPack::File*>(ref.file());
   if (wavPack_file) {
     return apeTagCover(wavPack_file->APETag());
+  }
+
+  TagLib::DSF::File* dsf_file = dynamic_cast<TagLib::DSF::File*>(ref.file());
+  if (dsf_file) {
+    TagLib::ID3v2::Tag* tag = dynamic_cast<TagLib::ID3v2::Tag*>(dsf_file->tag());
+    if (tag) {
+      TagLib::ID3v2::FrameList apic_frames = tag->frameListMap()["APIC"];
+      if (!apic_frames.isEmpty()) {
+        TagLib::ID3v2::AttachedPictureFrame* pic =
+            static_cast<TagLib::ID3v2::AttachedPictureFrame*>(apic_frames.front());
+        return QByteArray((const char*)pic->picture().data(),
+                          pic->picture().size());
+      }
+    }
   }
 
   return QByteArray();

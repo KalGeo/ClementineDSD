@@ -22,6 +22,7 @@ message SongMetadata {
     SPC = 15;
     VGM = 16;
     APE = 17;
+    DSF = 18;
     STREAM = 99;
   }
 
