@@ -150,12 +150,10 @@ Run from a terminal to watch logs while testing.
 - Stereo only (2 channels)  
 - No DST (compressed DFF) — uncompressed DFF only  
 - Native DSD only (no DoP, no PCM fallback)  
-- Linux/ALSA only (tested on Ubuntu, Wayland/X11)  
-- No GUI for device selection yet (use env/QSettings)
+- Linux/ALSA only (tested on Ubuntu, Wayland/X11)
 
 ## Roadmap
 
-- Simple **GUI** picker for ALSA devices that support native DSD  
 - Optional **DoP** output mode  
 - Improved UI prompts for common ALSA errors  
 - Packaging (Flatpak/AppImage) after broader hardware testing
