@@ -1,9 +1,9 @@
-# Clementine DSD (Unofficial)
+# Clementine DSD
 
 Clementine DSD is an experimental fork of Clementine focused on **native DSD playback over ALSA** on Linux (Wayland/X11).  
-It adds **DSF/DFF** playback with correct duration/elapsed time, **seeking**, and **pause/unpause**, targeting DACs that accept `DSD_U32_BE`.
+It adds **DSF/DFF** playback and tag editing.
 
-> **Status:** experimental. Tested on Ubuntu with an SMSL DAC (native DSD).  
+> **Status:** Tested on Ubuntu with an SMSL DAC (native DSD, accepts `DSD_U32_BE`).
 > Stereo only. No DST (compressed DFF). Linux/ALSA only.
 
 ## Table of contents
@@ -25,9 +25,7 @@ It adds **DSF/DFF** playback with correct duration/elapsed time, **seeking**, an
 ## What’s new
 
 - Native **DSF / DFF** playback over **ALSA** (`SND_PCM_FORMAT_DSD_U32_BE`)
-- Correct **duration** and **elapsed position** in the UI
-- **Seeking** (aligned for DSD; DSF block & DFF interleaved-safe)
-- **Pause / Unpause** (hardware pause when supported)
+- tag editing for **DSF / DFF**
 - Device selection: **auto-probe**, **env var override**, or **persisted QSettings**
 
 ## Requirements
@@ -152,12 +150,10 @@ Run from a terminal to watch logs while testing.
 - Stereo only (2 channels)  
 - No DST (compressed DFF) — uncompressed DFF only  
 - Native DSD only (no DoP, no PCM fallback)  
-- Linux/ALSA only (tested on Ubuntu, Wayland/X11)  
-- No GUI for device selection yet (use env/QSettings)
+- Linux/ALSA only (tested on Ubuntu, Wayland/X11)
 
 ## Roadmap
 
-- Simple **GUI** picker for ALSA devices that support native DSD  
 - Optional **DoP** output mode  
 - Improved UI prompts for common ALSA errors  
 - Packaging (Flatpak/AppImage) after broader hardware testing
