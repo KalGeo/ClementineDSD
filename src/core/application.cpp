@@ -203,7 +203,7 @@ class ApplicationImpl {
 
 Application::Application(QObject* parent)
     : QObject(parent), p_(new ApplicationImpl(this)) {
-  setObjectName("Clementine Application");
+  setObjectName("ClementineDSD Application");
 
   // Show the splash
   splash_.reset(new Splash());

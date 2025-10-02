@@ -25,165 +25,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
-     <property name="title">
-      <string>Fading</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QCheckBox" name="fading_out">
-        <property name="text">
-         <string>Fade out when stopping a track</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="fading_cross">
-        <property name="text">
-         <string>Cross-fade when changing tracks manually</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="fading_auto">
-        <property name="text">
-         <string>Cross-fade when changing tracks automatically</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="fading_samealbum">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Except between tracks on the same album or in the same CUE sheet</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QWidget" name="fading_options" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Fading duration</string>
-           </property>
-           <property name="indent">
-            <number>22</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="fading_duration">
-           <property name="suffix">
-            <string> ms</string>
-           </property>
-           <property name="minimum">
-            <number>1</number>
-           </property>
-           <property name="maximum">
-            <number>10000</number>
-           </property>
-           <property name="singleStep">
-            <number>1000</number>
-           </property>
-           <property name="value">
-            <number>2000</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>257</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="fadeout_pause">
-        <property name="text">
-         <string>Fade out on pause / fade in on resume</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Fading duration</string>
-          </property>
-          <property name="indent">
-           <number>22</number>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="fading_pause_duration">
-          <property name="suffix">
-           <string> ms</string>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>10000</number>
-          </property>
-          <property name="singleStep">
-           <number>50</number>
-          </property>
-          <property name="value">
-           <number>250</number>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <widget class="QGroupBox" name="replaygain_group">
      <property name="title">
       <string>Replay Gain</string>
@@ -301,6 +142,9 @@
        <widget class="QCheckBox" name="alsa_exclusive">
         <property name="text">
          <string>Use ALSA hardware device (exclusive, no Pulse/PipeWire)</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -466,16 +310,6 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0" colspan="2">
-       <widget class="QCheckBox" name="dsd_preload_experimental">
-        <property name="toolTip">
-         <string>Preload next DSD file to reduce transition delay between tracks</string>
-        </property>
-        <property name="text">
-         <string>Preload next DSD track</string>
-        </property>
-       </widget>
-      </item>
       <item row="6" column="1">
        <layout class="QHBoxLayout" name="output_format_layout">
         <item>
@@ -558,22 +392,6 @@
     <hint type="destinationlabel">
      <x>143</x>
      <y>285</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>fading_auto</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>fading_samealbum</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>109</x>
-     <y>133</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>113</x>
-     <y>153</y>
     </hint>
    </hints>
   </connection>

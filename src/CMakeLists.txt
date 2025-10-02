@@ -1396,7 +1396,7 @@ if(WIN32)
   set(CLEMENTINE-WIN32-RESOURCES windres.rc)
 endif(WIN32)
 
-add_executable(clementine
+add_executable(clementinedsd
   MACOSX_BUNDLE
   ${CLEMENTINE-WIN32-FLAG}
   ${CLEMENTINE-WIN32-RESOURCES}
@@ -1404,34 +1404,34 @@ add_executable(clementine
 )
 
 if (FREEBSD)
-  target_link_libraries(clementine execinfo)
+  target_link_libraries(clementinedsd execinfo)
 endif (FREEBSD)
 
-target_link_libraries(clementine
+target_link_libraries(clementinedsd
   clementine_lib
 )
 
 # macdeploy.py relies on the blob being built first.
-add_dependencies(clementine clementine-tagreader)
+add_dependencies(clementinedsd clementine-tagreader)
 
-set_target_properties(clementine PROPERTIES
+set_target_properties(clementinedsd PROPERTIES
   MACOSX_BUNDLE_INFO_PLIST "../dist/Info.plist"
 )
 
 if (APPLE)
   install(FILES ../dist/clementine.icns
-    DESTINATION "${CMAKE_BINARY_DIR}/clementine.app/Contents/Resources")
+    DESTINATION "${CMAKE_BINARY_DIR}/clementinedsd.app/Contents/Resources")
   install(FILES ../dist/qt.conf
-    DESTINATION "${CMAKE_BINARY_DIR}/clementine.app/Contents/Resources")
+    DESTINATION "${CMAKE_BINARY_DIR}/clementinedsd.app/Contents/Resources")
   install(FILES ../dist/sparkle_pub.pem
-    DESTINATION "${CMAKE_BINARY_DIR}/clementine.app/Contents/Resources")
+    DESTINATION "${CMAKE_BINARY_DIR}/clementinedsd.app/Contents/Resources")
   install(FILES ../dist/cacert.pem
-    DESTINATION "${CMAKE_BINARY_DIR}/clementine.app/Contents/Resources")
+    DESTINATION "${CMAKE_BINARY_DIR}/clementinedsd.app/Contents/Resources")
 
   if (HAVE_BREAKPAD)
     install(DIRECTORY
         ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/google-breakpad/client/mac/build/Release/Breakpad.framework
-        DESTINATION "${CMAKE_BINARY_DIR}/clementine.app/Contents/Frameworks"
+        DESTINATION "${CMAKE_BINARY_DIR}/clementinedsd.app/Contents/Frameworks"
         PATTERN "*.h" EXCLUDE
         PATTERN "Inspector" PERMISSIONS OWNER_EXECUTE OWNER_READ
                                         GROUP_EXECUTE GROUP_READ
@@ -1442,48 +1442,48 @@ if (APPLE)
   endif (HAVE_BREAKPAD)
 
   if (USE_BUNDLE)
-    add_custom_command(TARGET clementine
+    add_custom_command(TARGET clementinedsd
       POST_BUILD
       COMMAND
-      ${CMAKE_CURRENT_SOURCE_DIR}/../dist/macdeploy.py ${PROJECT_BINARY_DIR}/clementine.app -f
+      ${CMAKE_CURRENT_SOURCE_DIR}/../dist/macdeploy.py ${PROJECT_BINARY_DIR}/clementinedsd.app -f
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
   endif(USE_BUNDLE)
 
-  add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/clementine.breakpad
+  add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/clementinedsd.breakpad
     COMMAND
     ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/google-breakpad/tools/mac/dump_syms/build/Release/dump_syms
-    -a i386 ${PROJECT_BINARY_DIR}/clementine.app/Contents/MacOS/clementine
-    > ${PROJECT_BINARY_DIR}/clementine.breakpad
-    DEPENDS clementine)
-  add_custom_target(clementine-breakpad
-    DEPENDS ${PROJECT_BINARY_DIR}/clementine.breakpad)
+    -a i386 ${PROJECT_BINARY_DIR}/clementinedsd.app/Contents/MacOS/clementinedsd
+    > ${PROJECT_BINARY_DIR}/clementinedsd.breakpad
+    DEPENDS clementinedsd)
+  add_custom_target(clementinedsd-breakpad
+    DEPENDS ${PROJECT_BINARY_DIR}/clementinedsd.breakpad)
 
   if (APPLE_DEVELOPER_ID)
     add_custom_target(
       sign
       COMMAND
-      ${PROJECT_SOURCE_DIR}/dist/codesign.py ${APPLE_DEVELOPER_ID} ${PROJECT_BINARY_DIR}/clementine.app
-      DEPENDS clementine
+      ${PROJECT_SOURCE_DIR}/dist/codesign.py ${APPLE_DEVELOPER_ID} ${PROJECT_BINARY_DIR}/clementinedsd.app
+      DEPENDS clementinedsd
       VERBATIM
     )
   endif()
 
 
   add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/clementine-${CLEMENTINE_VERSION_SPARKLE}.dmg
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${PROJECT_BINARY_DIR}/clementine-${CLEMENTINE_VERSION_SPARKLE}.dmg
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../dist/create-dmg.sh ${PROJECT_BINARY_DIR}/clementine.app
+    OUTPUT ${PROJECT_BINARY_DIR}/clementinedsd-${CLEMENTINE_VERSION_SPARKLE}.dmg
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${PROJECT_BINARY_DIR}/clementinedsd-${CLEMENTINE_VERSION_SPARKLE}.dmg
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../dist/create-dmg.sh ${PROJECT_BINARY_DIR}/clementinedsd.app
     COMMAND ${CMAKE_COMMAND} -E rename
-      ${PROJECT_BINARY_DIR}/clementine.dmg
-      ${PROJECT_BINARY_DIR}/clementine-${CLEMENTINE_VERSION_SPARKLE}.dmg
-    DEPENDS clementine
+      ${PROJECT_BINARY_DIR}/clementinedsd.dmg
+      ${PROJECT_BINARY_DIR}/clementinedsd-${CLEMENTINE_VERSION_SPARKLE}.dmg
+    DEPENDS clementinedsd
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   )
   add_custom_target(dmg
-    DEPENDS ${PROJECT_BINARY_DIR}/clementine-${CLEMENTINE_VERSION_SPARKLE}.dmg)
+    DEPENDS ${PROJECT_BINARY_DIR}/clementinedsd-${CLEMENTINE_VERSION_SPARKLE}.dmg)
 else (APPLE)
-  install(TARGETS clementine
+  install(TARGETS clementinedsd
     RUNTIME DESTINATION bin
   )
 endif (APPLE)

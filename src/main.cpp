@@ -263,12 +263,12 @@ int main(int argc, char* argv[]) {
   mac::MacMain();
 #endif
 
-  QCoreApplication::setApplicationName("Clementine");
+  QCoreApplication::setApplicationName("ClementineDSD");
   QCoreApplication::setApplicationVersion(CLEMENTINE_VERSION_DISPLAY);
   QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
   QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-  QCoreApplication::setOrganizationName("Clementine");
-  QCoreApplication::setOrganizationDomain("clementine-player.org");
+  QCoreApplication::setOrganizationName("ClementineDSD");
+  QCoreApplication::setOrganizationDomain("clementine-dsd.github.io");
 
 // This makes us show up nicely in gnome-volume-control
 #if !GLIB_CHECK_VERSION(2, 36, 0)
@@ -288,7 +288,7 @@ int main(int argc, char* argv[]) {
 
   {
     // Only start a core application now so we can check if there's another
-    // Clementine running without needing an X server.
+    // ClementineDSD running without needing an X server.
     // This MUST be done before parsing the commandline options so QTextCodec
     // gets the right system locale for filenames.
     QtSingleCoreApplication a(argc, argv);
@@ -303,7 +303,7 @@ int main(int argc, char* argv[]) {
     if (a.isRunning()) {
       if (options.is_empty()) {
         qLog(Info)
-            << "Clementine is already running - activating existing window";
+            << "ClementineDSD is already running - activating existing window";
       }
 
       QByteArray serializedOptions = options.Serialize();
@@ -317,7 +317,7 @@ int main(int argc, char* argv[]) {
 
   // Output the version, so when people attach log output to bug reports they
   // don't have to tell us which version they're using.
-  qLog(Info) << "Clementine-qt5" << CLEMENTINE_VERSION_DISPLAY;
+  qLog(Info) << "ClementineDSD-qt5" << CLEMENTINE_VERSION_DISPLAY;
 
   // Seed the random number generators.
   time_t t = time(nullptr);
@@ -367,7 +367,7 @@ int main(int argc, char* argv[]) {
 
 #ifndef Q_OS_DARWIN
   // Gnome on Ubuntu has menu icons disabled by default.  I think that's a bad
-  // idea, and makes some menus in Clementine look confusing.
+  // idea, and makes some menus in ClementineDSD look confusing.
   QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, false);
 #else
   QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, true);
@@ -396,7 +396,7 @@ int main(int argc, char* argv[]) {
 // Set the name of the app desktop file as per the freedesktop specifications
 // This is needed on Wayland for the main window to show the correct icon
 #if QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)
-  QGuiApplication::setDesktopFileName("org.clementine_player.Clementine");
+  QGuiApplication::setDesktopFileName("org.clementine_player.ClementineDSD");
 #endif
 
   // Resources
@@ -443,7 +443,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef Q_OS_LINUX
   // In 11.04 Ubuntu decided that the system tray should be reserved for certain
-  // whitelisted applications.  Clementine will override this setting and insert
+  // whitelisted applications.  ClementineDSD will override this setting and insert
   // itself into the list of whitelisted apps.
   UbuntuUnityHack hack;
 #endif  // Q_OS_LINUX

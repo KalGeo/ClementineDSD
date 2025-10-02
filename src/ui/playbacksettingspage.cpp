@@ -30,11 +30,6 @@ PlaybackSettingsPage::PlaybackSettingsPage(SettingsDialog* dialog)
   ui_->setupUi(this);
   setWindowIcon(IconLoader::Load("media-playback-start", IconLoader::Base));
 
-  connect(ui_->fading_cross, SIGNAL(toggled(bool)),
-          SLOT(FadingOptionsChanged()));
-  connect(ui_->fading_out, SIGNAL(toggled(bool)), SLOT(FadingOptionsChanged()));
-  connect(ui_->fading_auto, SIGNAL(toggled(bool)),
-          SLOT(FadingOptionsChanged()));
 
   connect(ui_->buffer_min_fill, SIGNAL(valueChanged(int)),
           SLOT(BufferMinFillChanged(int)));
@@ -93,25 +88,12 @@ void PlaybackSettingsPage::Load() {
   ui_->current_glow->setChecked(s.value("glow_effect", true).toBool());
   s.endGroup();
 
-  s.beginGroup(Engine::Base::kSettingsGroup);
-  ui_->fading_out->setChecked(s.value("FadeoutEnabled", true).toBool());
-  ui_->fading_cross->setChecked(s.value("CrossfadeEnabled", true).toBool());
-  ui_->fading_auto->setChecked(s.value("AutoCrossfadeEnabled", false).toBool());
-  ui_->fading_duration->setValue(s.value("FadeoutDuration", 2000).toInt());
-  ui_->fading_samealbum->setChecked(
-      s.value("NoCrossfadeSameAlbum", true).toBool());
-  ui_->fadeout_pause->setChecked(
-      s.value("FadeoutPauseEnabled", false).toBool());
-  ui_->fading_pause_duration->setValue(
-      s.value("FadeoutPauseDuration", 250).toInt());
-  s.endGroup();
 
   s.beginGroup(GstEngine::kSettingsGroup);
   QString sink = s.value("sink", GstEngine::kAutoSink).toString();
   QVariant device = s.value("device");
-  bool alsa_exclusive = s.value("alsa_exclusive", false).toBool();
+  bool alsa_exclusive = s.value("alsa_exclusive", true).toBool();
   QString alsa_device = s.value("alsa_device", QString()).toString();
-  bool dsd_preload = s.value("dsd_preload_experimental", false).toBool();
 
   ui_->gst_output->setCurrentIndex(0);
   for (int i = 0; i < ui_->gst_output->count(); ++i) {
@@ -142,7 +124,6 @@ void PlaybackSettingsPage::Load() {
   ui_->alsa_exclusive->setChecked(alsa_exclusive);
   ui_->alsa_device_label->setEnabled(alsa_exclusive);
   ui_->alsa_device_combo->setEnabled(alsa_exclusive);
-  ui_->dsd_preload_experimental->setChecked(dsd_preload);
 
   // Populate ALSA devices list using AlsaDeviceFinder directly
   QList<DeviceFinder::Device> alsa_devices;
@@ -177,15 +158,6 @@ void PlaybackSettingsPage::Save() {
   s.setValue("glow_effect", ui_->current_glow->isChecked());
   s.endGroup();
 
-  s.beginGroup(Engine::Base::kSettingsGroup);
-  s.setValue("FadeoutEnabled", ui_->fading_out->isChecked());
-  s.setValue("FadeoutDuration", ui_->fading_duration->value());
-  s.setValue("CrossfadeEnabled", ui_->fading_cross->isChecked());
-  s.setValue("AutoCrossfadeEnabled", ui_->fading_auto->isChecked());
-  s.setValue("NoCrossfadeSameAlbum", ui_->fading_samealbum->isChecked());
-  s.setValue("FadeoutPauseEnabled", ui_->fadeout_pause->isChecked());
-  s.setValue("FadeoutPauseDuration", ui_->fading_pause_duration->value());
-  s.endGroup();
 
   GstEngine::OutputDetails details =
       ui_->gst_output->itemData(ui_->gst_output->currentIndex())
@@ -203,7 +175,6 @@ void PlaybackSettingsPage::Save() {
     s.setValue("sink", details.gstreamer_plugin_name);
     s.setValue("device", details.device_property_value);
   }
-  s.setValue("dsd_preload_experimental", ui_->dsd_preload_experimental->isChecked());
   s.setValue("rgenabled", ui_->replaygain->isChecked());
   s.setValue("rgmode", ui_->replaygain_mode->currentIndex());
   s.setValue("rgpreamp", float(ui_->replaygain_preamp->value()) / 10 - 15);
@@ -231,11 +202,6 @@ void PlaybackSettingsPage::BufferMinFillChanged(int value) {
   ui_->buffer_min_fill_value_label->setText(QString::number(value) + "%");
 }
 
-void PlaybackSettingsPage::FadingOptionsChanged() {
-  ui_->fading_options->setEnabled(ui_->fading_out->isChecked() ||
-                                  ui_->fading_cross->isChecked() ||
-                                  ui_->fading_auto->isChecked());
-}
 
 void PlaybackSettingsPage::AlsaExclusiveToggled(bool on) {
   ui_->alsa_device_label->setEnabled(on);

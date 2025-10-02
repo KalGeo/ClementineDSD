@@ -33,7 +33,6 @@ class PlaybackSettingsPage : public SettingsPage {
   void Save();
 
  private slots:
-  void FadingOptionsChanged();
   void RgPreampChanged(int value);
   void BufferMinFillChanged(int value);
   void AlsaExclusiveToggled(bool on);

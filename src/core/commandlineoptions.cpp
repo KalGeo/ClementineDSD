@@ -36,7 +36,7 @@
 #include "version.h"
 
 const char* CommandlineOptions::kHelpText =
-    "%1: clementine [%2] [%3]\n"
+    "%1: ClementineDSD [%2] [%3]\n"
     "\n"
     "%4:\n"
     "  -p, --play                  %5\n"
@@ -72,7 +72,7 @@ const char* CommandlineOptions::kHelpText =
     "      --version               %33\n"
     "  -x, --delete-current        %34\n";
 
-const char* CommandlineOptions::kVersionText = "Clementine %1";
+const char* CommandlineOptions::kVersionText = "ClementineDSD %1";
 
 CommandlineOptions::CommandlineOptions(int argc, char** argv)
     : argc_(argc),
