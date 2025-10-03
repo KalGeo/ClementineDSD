@@ -25,9 +25,10 @@ fi
 echo "✅ ClementineDSD built successfully!"
 echo "🔧 Binary: $(pwd)/bin/clementinedsd ($(du -h bin/clementinedsd | cut -f1))"
 
-# Copy executable to root for convenience
-cp bin/clementinedsd .
-echo "📋 Copied executable to root directory"
+# Note: Executable is ready in bin/clementinedsd
+# Use ./install.sh to install to ~/.local/bin/ for desktop integration
+echo "📋 Executable ready in bin/clementinedsd"
+echo "💡 Run ./install.sh to install to ~/.local/bin/ for desktop integration"
 
 # Show version
 echo "📋 Version: $(bin/clementinedsd --version | head -n 1)"
