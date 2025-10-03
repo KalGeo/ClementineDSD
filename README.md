@@ -1,164 +1,134 @@
-# Clementine DSD
+# ClementineDSD
 
-Clementine DSD is an experimental fork of Clementine focused on **native DSD playback over ALSA** on Linux (Wayland/X11).  
-It adds **DSF/DFF** playback and tag editing.
+🎵 **Professional Audio Player with Native DSD Support**
 
-> **Status:** Tested on Ubuntu with an SMSL DAC (native DSD, accepts `DSD_U32_BE`).
-> Stereo only. No DST (compressed DFF). Linux/ALSA only.
+[![GitHub License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](https://github.com/KalGeo/ClementineDSD/blob/master/LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/KalGeo/ClementineDSD)](https://github.com/KalGeo/ClementineDSD/releases/latest)
 
-## Table of contents
+ClementineDSD is a specialized fork of Clementine optimized for **Direct Stream Digital (DSD)** audio playback through direct ALSA hardware access. It provides pristine audio quality for serious audiophiles and DSD enthusiasts.
 
-- [What’s new](#whats-new)
-- [Requirements](#requirements)
-- [Build](#build)
-- [Selecting the ALSA device](#selecting-the-alsa-device)
-  - [Environment variable (one-off/persistent)](#environment-variable-one-offpersistent)
-  - [QSettings (persisted)](#qsettings-persisted)
-  - [Auto-probe (default)](#auto-probe-default)
-  - [Find your card,device IDs](#find-your-carddevice-ids)
-- [Usage notes](#usage-notes)
-- [Troubleshooting](#troubleshooting)
-- [Known limitations](#known-limitations)
-- [Roadmap](#roadmap)
-- [License](#license)
+## ✨ Features
 
-## What’s new
+### 🎛️ **Native DSD Audio Support**
+- Direct playback of `.dsf` and `.dff` files via ALSA (`SND_PCM_FORMAT_DSD_U32_BE`)
+- Hardware-level audio control for maximum quality
+- Optimized audio engine architecture specifically for DSD files
 
-- Native **DSF / DFF** playback over **ALSA** (`SND_PCM_FORMAT_DSD_U32_BE`)
-- tag editing for **DSF / DFF**
-- Device selection: **auto-probe**, **env var override**, or **persisted QSettings**
+### 🔧 **Professional Audio Design**
+- **ALSA exclusive mode** enabled by default
+- Direct hardware access bypassing audio servers (PulseAudio/PipeWire)
+- Clean audio transitions without processing artifacts
+- Automatic device auto-probing for DSD-capable hardware
 
-## Requirements
+### 🏷️ **ClementineDSD Identity**
+- Fully rebranded as "ClementineDSD" throughout the application
+- Version identification: "ClementineDSD 1.4.1 dsd"
+- Unique desktop integration and file associations
 
-- Linux with ALSA (`alsa-lib`)
-- Qt 5 (same family as upstream Clementine)
-- A DAC that supports **native DSD_U32_BE**
-- DSF/DFF content (uncompressed DFF only)
+## 🚀 Quick Start
 
-## Build
+### Download Pre-built Binary
+1. Download the `clementinedsd` executable from [Releases](https://github.com/KalGeo/ClementineDSD/releases/latest)
+2. Make executable: `chmod +x clementinedsd`
+3. Run: `./clementinedsd`
 
-Typical local build:
-
+### Build from Source
 ```bash
-mkdir -p bin && cd bin
-cmake ..
-make -j"$(nproc)"
-./clementine
+git clone https://github.com/KalGeo/ClementineDSD.git
+cd ClementineDSD
+
+# Quick build with included script
+./rebuild.sh
+
+# Or manual build
+cmake -S . -B bin
+cmake --build bin --target clementinedsd --parallel $(nproc)
 ```
 
-If your DAC supports native DSD, the app will try to find it automatically on first run (watch logs).
+## ⚙️ Setup
 
-## Selecting the ALSA device
+For optimal DSD playback:
 
-This fork looks for a DSD-capable device in this order:
+1. **Enable ALSA Exclusive Mode**: "Use ALSA hardware device (exclusive, no Pulse/PipeWire)" ← *Pre-enabled*
+2. **Select ALSA Device**: Choose your DSD-capable DAC from the dropdown
+3. **Configure Audio**: Ensure your audio equipment supports DSD over USB/PCIe
 
-1. **Environment variable** `CLEMENTINE_DSD_ALSA_DEVICE` (highest priority)  
-2. **QSettings** key `DSD/alsa_device`  
-3. **Auto-probe** ALSA for a device that supports `DSD_U32_BE` at the mapped rate; on success the choice is saved to QSettings
-
-### Environment variable (one-off/persistent)
-
-One-off launch in the current terminal:
+### Environment Variables (Optional)
 ```bash
-CLEMENTINE_DSD_ALSA_DEVICE="hw:2,0" ./clementine
-```
-
-Or export it for your shell session:
-```bash
+# Force specific ALSA device
 export CLEMENTINE_DSD_ALSA_DEVICE="hw:2,0"
-./clementine
+./clementinedsd
 ```
 
-From a desktop launcher (`.desktop` file), set:
-```
-Exec=env CLEMENTINE_DSD_ALSA_DEVICE=hw:2,0 /full/path/to/clementine
-```
+## 🎧 System Requirements
 
-### QSettings (persisted)
+- **Linux** with ALSA audio support (`alsa-lib`)
+- **Qt 5** development libraries (for building from source)
+- **DSD-capable DAC** (USB Audio Class 2.0 or PCIe audio interface)
+- **DSD audio files** (`.dsf`, `.dff` format - uncompressed DFF only)
 
-Edit (or create) the Clementine config file (Ubuntu example):
+## 🎯 Perfect For
 
-```
-~/.config/Clementine/Clementine.conf
-```
+- **DSD Audio Enthusiasts** - Native `.dsf` and `.dff` file playback
+- **Professional Audio Users** - Direct hardware control and clean audio path
+- **High-End Audio Setup** - Optimized for audiophile equipment
+- **Linux Audio Professionals** - ALSA-exclusive audio control
 
-Add:
-```
-[DSD]
-alsa_device=hw:2,0
-```
+## 📋 Usage Notes
 
-If the **environment variable** is set, it **overrides** QSettings for that run.
+- **Seek**: Supported for DSF/DFF with DSD boundary alignment
+- **Pause/Unpause**: Hardware pause when supported via ALSA
+- **Position Timer**: Accurate playback position tracking
+- **Stereo Only**: 2-channel output (no multichannel DSD yet)
 
-### Auto-probe (default)
+## 🔍 Troubleshooting
 
-If neither the env var nor QSettings are set, the app **auto-probes** ALSA devices and picks the first that works with `DSD_U32_BE` at the correct rate. On success, it saves:
-
-```
-[DSD]
-alsa_device=hw:X,Y
-```
-
-### Find your card,device IDs
-
-List ALSA hardware:
+### Device Detection
 ```bash
+# List available ALSA devices
 aplay -l
+
+# Example output:
+# card 2: MyDAC [USB DAC], device 0: USB Audio
+# Use hw:2,0 for this device
 ```
 
-You’ll see something like:
-```
-card 2: MyDAC [USB DAC], device 0: USB Audio
-```
+### Common Issues
+- **No Sound/Device Busy**: Close other audio applications using the DAC
+- **DSD Not Detected**: Ensure your DAC supports native DSD (not just DoP)
+- **Audio Artifacts**: Verify file integrity and try another DSD sample
 
-Use `hw:2,0` for that device.
+## 🔄 Migration from Clementine
 
-## Usage notes
+ClementineDSD creates separate settings from upstream Clementine, ensuring no conflicts with your existing configuration.
 
-- **Seek:** supported for DSF/DFF; aligned to DSD boundaries with ALSA reset to avoid artifacts.  
-- **Pause/Unpause:** hardware pause via `snd_pcm_pause()` when supported; otherwise software pause. The elapsed timer stops/resumes with the audio.  
-- **Position timer:** ~200 ms during playback; paused while paused.
+## 📖 Documentation
 
-Typical logs on success:
-```
-DSD ALSA: auto-probe picked hw:2,0
-DSD ALSA: selected device = "hw:2,0"
-ALSA ready: rate 176400 fmt DSD_U32_BE ch 2 (buffer=..., period=...)
-```
+- **[Release Notes](RELEASE_NOTES_v1.4.1-dsd.md)** - Complete feature overview
+- **[Technical Docs](doc/)** - Detailed technical documentation  
+- **[Known Limitations](doc/limitations.md)** - Current constraints
 
-Run from a terminal to watch logs while testing.
+## 🤝 Contributing
 
-## Troubleshooting
+Contributions are welcome! Please:
 
-- **No sound / device busy**  
-  Another app may be using the DAC. Close it and try again.  
-  You’ll see `snd_pcm_open ... busy, retrying…` while the engine backs off.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly with DSD hardware
+5. Submit a pull request
 
-- **DSD not detected**  
-  Ensure your DAC exposes **native DSD**; some only support DoP or PCM.  
-  Verify the device string (`hw:X,Y`) and try the env var to force it.
+## 📄 License
 
-- **Noise with DFF**  
-  The engine handles the typical DFF bit order (bit-reverse when required) and frame alignment.  
-  If noise persists, double-check the file integrity and try another DFF sample.
+This project follows **GPL-3.0-or-later** (same as upstream Clementine).
 
-- **Pause works but UI doesn’t toggle**  
-  The engine emits `StateChanged(Engine::Paused/Playing)`. Make sure your build includes those emits.
+## 🙏 Acknowledgments
 
-## Known limitations
+- Built on the excellent [Clementine Player](https://github.com/clementine-player/Clementine)
+- ALSA integration based on Direct Stream Digital specifications
 
-- Stereo only (2 channels)  
-- No DST (compressed DFF) — uncompressed DFF only  
-- Native DSD only (no DoP, no PCM fallback)  
-- Linux/ALSA only (tested on Ubuntu, Wayland/X11)
+---
 
-## Roadmap
+**Enjoy pristine DSD audio playback with ClementineDSD!** 🎵✨
 
-- Optional **DoP** output mode  
-- Improved UI prompts for common ALSA errors  
-- Packaging (Flatpak/AppImage) after broader hardware testing
-
-## License
-
-This fork follows **GPL-3.0-or-later** (same as Clementine).  
-See `LICENSE` for details.
+*Optimized for audiophiles who demand the purest possible audio experience.*
