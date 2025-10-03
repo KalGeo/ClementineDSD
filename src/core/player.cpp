@@ -893,6 +893,8 @@ void Player::TogglePrettyOSD() {
 }
 
 void Player::TrackAboutToEnd() {
+  qLog(Debug) << "TrackAboutToEnd: ENTRY - auto-crossfade enabled?" << engine_->is_autocrossfade_enabled();
+  
   // If the current track was from a URL handler then it might have special
   // behaviour to queue up a subsequent track.  We don't want to preload (and
   // scrobble) the next item in the playlist if it's just going to be stopped
@@ -915,22 +917,21 @@ void Player::TrackAboutToEnd() {
   }
 
   if (engine_->is_autocrossfade_enabled()) {
-    // Crossfade is on, so just start playing the next track.  The current one
-    // will fade out, and the new one will fade in
-
+    // WORKAROUND: Auto-crossfade has ALSA timing issues causing "Device busy" errors
+    // Disable auto-crossfade entirely to prevent pipeline conflicts
+    // Manual crossfade still works via manual track changes
+    
+    qLog(Debug) << "TrackAboutToEnd: Auto-crossfade disabled due to ALSA timing issues, using normal progression";
+    
     // But, if there's no next track and we don't want to fade out, then do
     // nothing and just let the track finish to completion.
     if (!engine_->is_fadeout_enabled() && !has_next_row) return;
 
-    // If the next track is on the same album (or same cue file), and the
-    // user doesn't want to crossfade between tracks on the same album, then
-    // don't do this automatic crossfading.
-    if (engine_->crossfade_same_album() || !has_next_row || !next_item ||
-        !current_item_->Metadata().IsOnSameAlbum(next_item->Metadata())) {
-      TrackEnded();
-      return;
-    }
+    // Force normal track progression instead of crossfade
+    TrackEnded();
+    return;
   }
+
 
   // Crossfade is off, so start preloading the next track so we don't get a
   // gap between songs.

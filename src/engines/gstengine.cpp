@@ -130,6 +130,12 @@ GstEngine::GstEngine(Application* app)
           SLOT(NewDebugConsole(Console*)));
 
   ReloadSettings();
+  
+  // WORKAROUND: Force disable ALL fade functionality to prevent ALSA device conflicts
+  qLog(Debug) << "GstEngine constructor: FORCE disabling ALL fade functionality due to ALSA timing issues";
+  autocrossfade_enabled_ = false;
+  crossfade_enabled_ = false;
+  fadeout_enabled_ = false;
 
 #ifdef Q_OS_DARWIN
   QDir resources_dir(mac::GetResourcesPath());
@@ -222,6 +228,12 @@ void GstEngine::InitialiseGstreamer() {
 
 void GstEngine::ReloadSettings() {
   Engine::Base::ReloadSettings();
+
+  // WORKAROUND: Disable ALL fade functionality to prevent ALSA device conflicts and multiple pipeline creation
+  qLog(Debug) << "GstEngine: Disabling ALL fade functionality due to ALSA timing issues";
+  autocrossfade_enabled_ = false;
+  crossfade_enabled_ = false;
+  fadeout_enabled_ = false;
 
   QSettings s;
   s.beginGroup(kSettingsGroup);
@@ -402,11 +414,17 @@ void GstEngine::StartPreloading(const MediaPlaybackRequest& req,
                                 qint64 beginning_nanosec, qint64 end_nanosec) {
   EnsureInitialised();
 
+  qLog(Debug) << "GstEngine::StartPreloading: Called for URL=" << req.url_.toString();
+  
   // No crossfading, so we can just queue the new URL in the existing
   // pipeline and get gapless playback (hopefully)
-  if (current_pipeline_)
+  if (current_pipeline_) {
+    qLog(Debug) << "GstEngine::StartPreloading: Setting next request on existing pipeline";
     current_pipeline_->SetNextReq(req, beginning_nanosec,
                                   force_stop_at_end ? end_nanosec : 0);
+  } else {
+    qLog(Debug) << "GstEngine::StartPreloading: No current pipeline, ignoring preload";
+  }
 }
 
 bool GstEngine::Load(const MediaPlaybackRequest& req,
@@ -422,6 +440,11 @@ bool GstEngine::Load(const MediaPlaybackRequest& req,
                             (autocrossfade_enabled_ && change & Engine::Auto) ||
                             ((crossfade_enabled_ || autocrossfade_enabled_) &&
                              change & Engine::Intro));
+  
+  qLog(Debug) << "GstEngine::Load: crossfade_enabled_=" << crossfade_enabled_ 
+              << " autocrossfade_enabled_=" << autocrossfade_enabled_
+              << " fadeout_enabled_=" << fadeout_enabled_
+              << " crossfade=" << crossfade << " change=" << change;
 
   if (change & Engine::Auto && change & Engine::SameAlbum &&
       !crossfade_same_album_)
