@@ -473,6 +473,7 @@ void TagReader::ReadFile(const QString& filename,
           }
         }
       }
+      song->set_valid(true);  // Mark DSF file as valid
     }
   } else if (TagLib::DSDIFF::File* file =
                  dynamic_cast<TagLib::DSDIFF::File*>(fileref->file())) {
@@ -570,6 +571,7 @@ void TagReader::ReadFile(const QString& filename,
           }
         }
       }
+      song->set_valid(true);  // Mark DFF file as valid
     }
   } else if (TagLib::FLAC::File* file =
                  dynamic_cast<TagLib::FLAC::File*>(fileref->file())) {
