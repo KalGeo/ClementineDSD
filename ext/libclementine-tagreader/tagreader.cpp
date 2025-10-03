@@ -188,6 +188,13 @@ void TagReader::ReadFile(const QString& filename,
     song->set_year(tag->year());
     song->set_track(tag->track());
     song->set_valid(true);
+  } else {
+    // DSD files might not have tags, but they're still valid media files
+    // Check if it's a DSD file type and mark as valid
+    cpb::tagreader::SongMetadata_Type filetype = GuessFileType(fileref.get());
+    if (filetype == cpb::tagreader::SongMetadata_Type_DSF || filetype == cpb::tagreader::SongMetadata_Type_DFF) {
+      song->set_valid(true);
+    }
   }
 
   QString disc;
