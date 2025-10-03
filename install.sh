@@ -1,45 +1,28 @@
 #!/bin/bash
 # ClementineDSD Installation Script
-# Installs ClementineDSD desktop integration
+# Installs ClementineDSD desktop integration (user-local, no sudo required)
 
 set -e  # Exit on any error
 
 echo "🎵 ClementineDSD Desktop Installation"
 echo "====================================="
 
-# Check if running with sudo
-if [ "$EUID" -ne 0 ]; then
-    echo "❌ Error: This script requires sudo privileges for system-wide installation"
-    echo ""
-    echo "🔧 Please run with sudo:"
-    echo "   sudo ./install.sh"
-    echo ""
-    echo "💡 This is required because we install to:"
-    echo "   • /usr/local/bin/ (executable)"
-    echo "   • /usr/share/applications/ (desktop file)"
-    echo "   • /usr/local/share/pixmaps/ (icon)"
-    echo ""
-    exit 1
-fi
-
-echo "✅ Running with sudo privileges"
-
 # Check if we're in the right directory
-if [ ! -f "bin/clementinedsd" ] || [ ! -f "ClementineDSD.desktop" ] || [ ! -f "clementinedsd.png" ]; then
+if [ ! -f "bin/clementinedsd" ] || [ ! -f "bin/clementine-tagreader" ] || [ ! -f "ClementineDSD.desktop" ] || [ ! -f "clementinedsd.png" ]; then
     echo "❌ Error: ClementineDSD files not found!"
     echo "   Make sure you're running this script from the ClementineDSD directory"
-    echo "   Required files: bin/clementinedsd, ClementineDSD.desktop, clementinedsd.png"
+    echo "   Required files: bin/clementinedsd, bin/clementine-tagreader, ClementineDSD.desktop, clementinedsd.png"
     exit 1
 fi
 
-# Always use system-wide installation
-INSTALL_MODE="system"
-PREFIX="/usr/local"
+# Use user-local installation (no sudo required)
+INSTALL_MODE="user-local"
+PREFIX="$HOME/.local"
 ICON_DIR="$PREFIX/share/pixmaps"
-DESKTOP_DIR="/usr/share/applications"
+DESKTOP_DIR="$HOME/.local/share/applications"
 BIN_DIR="$PREFIX/bin"
 
-echo "📁 Installation mode: $INSTALL_MODE (system-wide)"
+echo "📁 Installation mode: $INSTALL_MODE (user-local, no sudo required)"
 echo "📍 Installing to: $PREFIX"
 
 # Create directories if they don't exist
@@ -114,6 +97,12 @@ if command -v gtk-update-icon-cache >/dev/null 2>&1; then
     gtk-update-icon-cache -f "$PREFIX/share/icons/hicolor" 2>/dev/null || true
 fi
 
+# Update desktop database for user-local applications
+if command -v update-desktop-database >/dev/null 2>&1; then
+    echo "🔄 Updating user desktop database..."
+    update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
+fi
+
 # Optimize startup settings for faster launch
 echo "⚡ Optimizing startup settings..."
 if [ -f "$HOME/.config/ClementineDSD/ClementineDSD.conf" ]; then
@@ -137,7 +126,11 @@ echo "   • Tag reader: $TAGREADER_INSTALL_PATH"
 echo "   • Desktop file: $DESKTOP_DIR/org.clementine_player.ClementineDSD.desktop"
 echo "   • Icon: $ICON_DIR/clementine.png"
 echo ""
-echo "🔧 System-wide installation complete!"
+echo "🔧 User-local installation complete!"
+echo ""
+echo "💡 Note: Make sure ~/.local/bin is in your PATH:"
+echo "   Add this to your ~/.bashrc or ~/.profile:"
+echo "   export PATH=\"\$HOME/.local/bin:\$PATH\""
 echo ""
 echo "🎧 Enjoy your DSD audio playback with ClementineDSD!"
 
