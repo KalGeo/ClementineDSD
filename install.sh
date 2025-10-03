@@ -54,7 +54,7 @@ cp "clementinedsd.png" "$ICON_DIR/"
 
 # Update desktop file with correct paths
 echo "🚀 Installing desktop integration..."
-sed "s|Exec=clementinedsd|Exec=$INSTALL_PATH|g; s|Icon=clementinedsd|Icon=$ICON_DIR/clementinedsd.png|g" \
+sed "s|Exec=clementinedsd|Exec=$INSTALL_PATH|g; s|Icon=.*clementinedsd.*|Icon=$ICON_DIR/clementinedsd.png|g" \
     ClementineDSD.desktop > "$DESKTOP_DIR/ClementineDSD.desktop"
 
 # Make desktop file executable
@@ -95,3 +95,5 @@ else
 fi
 echo ""
 echo "🎧 Enjoy your DSD audio playback with ClementineDSD!"
+
+
