@@ -1,11 +1,28 @@
 #!/bin/bash
-# CletineDSD Installation Script
+# ClementineDSD Installation Script
 # Installs ClementineDSD desktop integration
 
 set -e  # Exit on any error
 
 echo "🎵 ClementineDSD Desktop Installation"
 echo "====================================="
+
+# Check if running with sudo
+if [ "$EUID" -ne 0 ]; then
+    echo "❌ Error: This script requires sudo privileges for system-wide installation"
+    echo ""
+    echo "🔧 Please run with sudo:"
+    echo "   sudo ./install.sh"
+    echo ""
+    echo "💡 This is required because we install to:"
+    echo "   • /usr/local/bin/ (executable)"
+    echo "   • /usr/share/applications/ (desktop file)"
+    echo "   • /usr/local/share/pixmaps/ (icon)"
+    echo ""
+    exit 1
+fi
+
+echo "✅ Running with sudo privileges"
 
 # Check if we're in the right directory
 if [ ! -f "bin/clementinedsd" ] || [ ! -f "ClementineDSD.desktop" ] || [ ! -f "clementinedsd.png" ]; then
@@ -37,8 +54,15 @@ CURRENT_DIR="$(pwd)"
 BINARY_PATH="$CURRENT_DIR/bin/clementinedsd"
 INSTALL_PATH="$BIN_DIR/clementinedsd"
 
+# Check if binary already exists
+if [ -f "$INSTALL_PATH" ]; then
+    echo "   ⚠️  Binary already exists at $INSTALL_PATH"
+    echo "   🔄 Overwriting with new version..."
+fi
+
 cp "$BINARY_PATH" "$INSTALL_PATH"
 chmod +x "$INSTALL_PATH"
+echo "   ✅ Binary installed successfully"
 
 # Copy icon in multiple sizes for faster loading
 echo "🎨 Installing icon (optimized for fast loading)..."
