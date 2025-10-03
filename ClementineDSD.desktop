@@ -1,0 +1,46 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ClementineDSD
+GenericName=ClementineDSD Music Player (with DSD support)
+Comment=Professional audio player with native DSD (.dsf/.dff) playback capability
+Categories=AudioVideo;Audio;Player;Qt;
+Exec=clementinedsd %U
+Icon=clementinedsd
+Terminal=false
+MimeType=audio/x-mpegurl;audio/mpeg;audio/x-mp3;audio/ogg;audio/flac;audio/x-vorbis+ogg;application/ogg;audio/x-aiff;audio/aiff;audio/m4a;audio/x-m4a;audio/x-ms-wma;audio/vnd.rn-realaudio;audio/vorbis;audio/x-flac;audio/mp4;audio/wav;audio/x-wav;audio/x-voc;audio/3gpp;audio/ac3;audio/AMR;audio/AMR-WB;audio/basic;audio/midi;audio/x-prs.ptt;audio/vnd.dlna.adts;audio/t140c;audio/x-aiff;audio/x-midi;audio/x-mod;audio/ogg;audio/vnd.audible;audio/vnd.dra;audio/vnd.everad.plj;audio/vnd.lucent.voice;audio/vnd.ms-playready.media.pya; audio/x-dsf;audio/x-dff;
+Keywords=music;sound;audio;player;media;dsd;dsf;dff;
+StartupNotify=true
+StartupWMClass=clementinedsd
+X-Desktop-File-Install-Version=0.22
+Actions=Play;Pause;Stop;StopCancel;Previous;Next;
+
+[Desktop Action Play]
+Exec=clementinedsd --play-pause
+Name=Play/Pause
+Icon=media-playback-start
+
+[Desktop Action Pause]
+Exec=clementinedsd --pause
+Name=Pause
+Icon=media-playback-pause
+
+[Desktop Action Stop]
+Exec=clementinedsd --stop
+Name=Stop
+Icon=media-playback-stop
+
+[Desktop Action StopCancel]
+Exec=clementinedsd --stop-after-current
+Name=Stop after current
+Icon=media-playback-stop
+
+[Desktop Action Previous]
+Exec=clementinedsd --previous
+Name=Previous
+Icon=media-skip-backward
+
+[Desktop Action Next]
+Exec=clementinedsd --next
+Name=Next
+Icon=media-skip-forward
