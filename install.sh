@@ -48,7 +48,7 @@ mkdir -p "$ICON_DIR"
 mkdir -p "$DESKTOP_DIR"
 mkdir -p "$BIN_DIR"
 
-# Copy executable
+# Copy executables
 echo "📦 Installing clementinedsd binary..."
 CURRENT_DIR="$(pwd)"
 BINARY_PATH="$CURRENT_DIR/bin/clementinedsd"
@@ -62,7 +62,22 @@ fi
 
 cp "$BINARY_PATH" "$INSTALL_PATH"
 chmod +x "$INSTALL_PATH"
-echo "   ✅ Binary installed successfully"
+echo "   ✅ clementinedsd binary installed successfully"
+
+# Copy tag reader binary
+echo "📦 Installing clementine-tagreader binary..."
+TAGREADER_PATH="$CURRENT_DIR/bin/clementine-tagreader"
+TAGREADER_INSTALL_PATH="$BIN_DIR/clementine-tagreader"
+
+# Check if tag reader binary already exists
+if [ -f "$TAGREADER_INSTALL_PATH" ]; then
+    echo "   ⚠️  Tag reader binary already exists at $TAGREADER_INSTALL_PATH"
+    echo "   🔄 Overwriting with new version..."
+fi
+
+cp "$TAGREADER_PATH" "$TAGREADER_INSTALL_PATH"
+chmod +x "$TAGREADER_INSTALL_PATH"
+echo "   ✅ clementine-tagreader binary installed successfully"
 
 # Copy icon in multiple sizes for faster loading
 echo "🎨 Installing icon (optimized for fast loading)..."
@@ -118,6 +133,7 @@ echo "   • Run $(basename "$INSTALL_PATH") --help for command-line options"
 echo ""
 echo "📁 Files installed:"
 echo "   • Executable: $INSTALL_PATH"
+echo "   • Tag reader: $TAGREADER_INSTALL_PATH"
 echo "   • Desktop file: $DESKTOP_DIR/org.clementine_player.ClementineDSD.desktop"
 echo "   • Icon: $ICON_DIR/clementine.png"
 echo ""
