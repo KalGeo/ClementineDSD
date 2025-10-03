@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblibclementine-tagreader.a "CMakeFiles/libclementine-tagreader.dir/fmpsparser.cpp.o" "CMakeFiles/libclementine-tagreader.dir/tagreader.cpp.o" "CMakeFiles/libclementine-tagreader.dir/gmereader.cpp.o" "CMakeFiles/libclementine-tagreader.dir/tagreadermessages.pb.cc.o"
+/usr/bin/ranlib liblibclementine-tagreader.a

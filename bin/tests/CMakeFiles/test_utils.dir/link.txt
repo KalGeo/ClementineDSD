@@ -1,0 +1,2 @@
+/usr/bin/ar qc libtest_utils.a CMakeFiles/test_utils.dir/mock_networkaccessmanager.cpp.o CMakeFiles/test_utils.dir/mock_playlistitem.cpp.o CMakeFiles/test_utils.dir/test_utils.cpp.o CMakeFiles/test_utils.dir/testobjectdecorators.cpp.o "CMakeFiles/test_utils.dir/__/ext/libclementine-tagreader/fmpsparser.cpp.o" CMakeFiles/test_utils.dir/moc_mock_networkaccessmanager.cpp.o CMakeFiles/test_utils.dir/moc_test_utils.cpp.o CMakeFiles/test_utils.dir/moc_testobjectdecorators.cpp.o
+/usr/bin/ranlib libtest_utils.a

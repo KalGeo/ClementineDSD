@@ -1,0 +1,12 @@
+clementinedsd_autogen/timestamp: \
+	/media/manolo/G/github/ClementineDSDCursor/ClementineDSD/bin/src/translations/translations.qrc \
+	/media/manolo/G/github/ClementineDSDCursor/ClementineDSD/cmake/ParseArguments.cmake \
+	/media/manolo/G/github/ClementineDSDCursor/ClementineDSD/cmake/Translations.cmake \
+	/media/manolo/G/github/ClementineDSDCursor/ClementineDSD/data/data.qrc \
+	/media/manolo/G/github/ClementineDSDCursor/ClementineDSD/src/CMakeLists.txt \
+	/media/manolo/G/github/ClementineDSDCursor/ClementineDSD/src/main.cpp \
+	/media/manolo/G/github/ClementineDSDCursor/ClementineDSD/src/version.h.in \
+	/usr/share/cmake-3.28/Modules/FindOpenGL.cmake \
+	/usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake \
+	/usr/share/cmake-3.28/Modules/FindPackageMessage.cmake \
+	/usr/bin/cmake

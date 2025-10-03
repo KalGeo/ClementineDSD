@@ -1,0 +1,316 @@
+/****************************************************************************
+** Meta object code from reading C++ file 'mpris2_tracklist.h'
+**
+** Created by: The Qt Meta Object Compiler version 67 (Qt 5.15.13)
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#include <memory>
+#include "mpris2_tracklist.h"
+#include <QtCore/qbytearray.h>
+#include <QtCore/qmetatype.h>
+#include <QtCore/QList>
+#if !defined(Q_MOC_OUTPUT_REVISION)
+#error "The header file 'mpris2_tracklist.h' doesn't include <QObject>."
+#elif Q_MOC_OUTPUT_REVISION != 67
+#error "This file was generated using the moc from 5.15.13. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
+
+QT_BEGIN_MOC_NAMESPACE
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+struct qt_meta_stringdata_Mpris2TrackList_t {
+    QByteArrayData data[26];
+    char stringdata0[1958];
+};
+#define QT_MOC_LITERAL(idx, ofs, len) \
+    Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
+    qptrdiff(offsetof(qt_meta_stringdata_Mpris2TrackList_t, stringdata0) + ofs \
+        - idx * sizeof(QByteArrayData)) \
+    )
+static const qt_meta_stringdata_Mpris2TrackList_t qt_meta_stringdata_Mpris2TrackList = {
+    {
+QT_MOC_LITERAL(0, 0, 15), // "Mpris2TrackList"
+QT_MOC_LITERAL(1, 16, 15), // "D-Bus Interface"
+QT_MOC_LITERAL(2, 32, 32), // "org.mpris.MediaPlayer2.TrackList"
+QT_MOC_LITERAL(3, 65, 19), // "D-Bus Introspection"
+QT_MOC_LITERAL(4, 85, 1623), // "  <interface name=\"org.mpris..."
+QT_MOC_LITERAL(5, 1560, 10), // "TrackAdded"
+QT_MOC_LITERAL(6, 1571, 0), // ""
+QT_MOC_LITERAL(7, 1572, 13), // "TrackMetadata"
+QT_MOC_LITERAL(8, 1586, 8), // "Metadata"
+QT_MOC_LITERAL(9, 1595, 15), // "QDBusObjectPath"
+QT_MOC_LITERAL(10, 1611, 10), // "AfterTrack"
+QT_MOC_LITERAL(11, 1622, 17), // "TrackListReplaced"
+QT_MOC_LITERAL(12, 1640, 22), // "QList<QDBusObjectPath>"
+QT_MOC_LITERAL(13, 1663, 6), // "Tracks"
+QT_MOC_LITERAL(14, 1670, 12), // "CurrentTrack"
+QT_MOC_LITERAL(15, 1683, 20), // "TrackMetadataChanged"
+QT_MOC_LITERAL(16, 1704, 7), // "TrackId"
+QT_MOC_LITERAL(17, 1712, 12), // "TrackRemoved"
+QT_MOC_LITERAL(18, 1725, 8), // "AddTrack"
+QT_MOC_LITERAL(19, 1734, 3), // "Uri"
+QT_MOC_LITERAL(20, 1738, 12), // "SetAsCurrent"
+QT_MOC_LITERAL(21, 1751, 17), // "GetTracksMetadata"
+QT_MOC_LITERAL(22, 1769, 8), // "TrackIds"
+QT_MOC_LITERAL(23, 1778, 4), // "GoTo"
+QT_MOC_LITERAL(24, 1783, 11), // "RemoveTrack"
+QT_MOC_LITERAL(25, 1795, 13) // "CanEditTracks"
+
+    },
+    "Mpris2TrackList\0D-Bus Interface\0"
+    "org.mpris.MediaPlayer2.TrackList\0"
+    "D-Bus Introspection\0"
+    "  <interface name=\"org.mpris.MediaPlayer2.TrackList\">\n    <method n"
+    "ame=\"GetTracksMetadata\">\n      <arg direction=\"in\" type=\"ao\" na"
+    "me=\"TrackIds\"/>\n      <arg direction=\"out\" type=\"aa{sv}\" name=\""
+    "Metadata\"/>\n      <annotation value=\"TrackMetadata\" name=\"org.qtp"
+    "roject.QtDBus.QtTypeName.Out0\"/>\n    </method>\n    <method name=\"A"
+    "ddTrack\">\n      <arg direction=\"in\" type=\"s\" name=\"Uri\"/>\n   "
+    "   <arg direction=\"in\" type=\"o\" name=\"AfterTrack\"/>\n      <arg "
+    "direction=\"in\" type=\"b\" name=\"SetAsCurrent\"/>\n    </method>\n  "
+    "  <method name=\"RemoveTrack\">\n      <arg direction=\"in\" type=\"o\""
+    " name=\"TrackId\"/>\n    </method>\n    <method name=\"GoTo\">\n      "
+    "<arg direction=\"in\" type=\"o\" name=\"TrackId\"/>\n    </method>\n  "
+    "  <signal name=\"TrackListReplaced\">\n      <arg type=\"ao\" name=\"T"
+    "racks\"/>\n      <arg type=\"o\" name=\"CurrentTrack\"/>\n    </signal"
+    ">\n    <signal name=\"TrackAdded\">\n      <arg type=\"a{sv}\" name=\""
+    "Metadata\"/>\n      <annotation value=\"TrackMetadata\" name=\"org.qtp"
+    "roject.QtDBus.QtTypeName.Out0\"/>\n      <arg type=\"o\" name=\"AfterT"
+    "rack\"/>\n    </signal>\n    <signal name=\"TrackRemoved\">\n      <ar"
+    "g type=\"o\" name=\"TrackId\"/>\n    </signal>\n    <signal name=\"Tra"
+    "ckMetadataChanged\">\n      <arg type=\"o\" name=\"TrackId\"/>\n      "
+    "<arg type=\"a{sv}\" name=\"Metadata\"/>\n      <annotation value=\"Tra"
+    "ckMetadata\" name=\"org.qtproject.QtDBus.QtTypeName.Out1\"/>\n    </si"
+    "gnal>\n    <property access=\"read\" type=\"ao\" name=\"Tracks\"/>\n  "
+    "  <property access=\"read\" type=\"b\" name=\"CanEditTracks\"/>\n  </i"
+    "nterface>\n\0"
+    "TrackAdded\0\0TrackMetadata\0Metadata\0"
+    "QDBusObjectPath\0AfterTrack\0TrackListReplaced\0"
+    "QList<QDBusObjectPath>\0Tracks\0"
+    "CurrentTrack\0TrackMetadataChanged\0"
+    "TrackId\0TrackRemoved\0AddTrack\0Uri\0"
+    "SetAsCurrent\0GetTracksMetadata\0TrackIds\0"
+    "GoTo\0RemoveTrack\0CanEditTracks"
+};
+#undef QT_MOC_LITERAL
+
+static const uint qt_meta_data_Mpris2TrackList[] = {
+
+ // content:
+       8,       // revision
+       0,       // classname
+       2,   14, // classinfo
+       8,   18, // methods
+       2,   92, // properties
+       0,    0, // enums/sets
+       0,    0, // constructors
+       0,       // flags
+       4,       // signalCount
+
+ // classinfo: key, value
+       1,    2,
+       3,    4,
+
+ // signals: name, argc, parameters, tag, flags
+       5,    2,   58,    6, 0x06 /* Public */,
+      11,    2,   63,    6, 0x06 /* Public */,
+      15,    2,   68,    6, 0x06 /* Public */,
+      17,    1,   73,    6, 0x06 /* Public */,
+
+ // slots: name, argc, parameters, tag, flags
+      18,    3,   76,    6, 0x0a /* Public */,
+      21,    1,   83,    6, 0x0a /* Public */,
+      23,    1,   86,    6, 0x0a /* Public */,
+      24,    1,   89,    6, 0x0a /* Public */,
+
+ // signals: parameters
+    QMetaType::Void, 0x80000000 | 7, 0x80000000 | 9,    8,   10,
+    QMetaType::Void, 0x80000000 | 12, 0x80000000 | 9,   13,   14,
+    QMetaType::Void, 0x80000000 | 9, 0x80000000 | 7,   16,    8,
+    QMetaType::Void, 0x80000000 | 9,   16,
+
+ // slots: parameters
+    QMetaType::Void, QMetaType::QString, 0x80000000 | 9, QMetaType::Bool,   19,   10,   20,
+    0x80000000 | 7, 0x80000000 | 12,   22,
+    QMetaType::Void, 0x80000000 | 9,   16,
+    QMetaType::Void, 0x80000000 | 9,   16,
+
+ // properties: name, type, flags
+      25, QMetaType::Bool, 0x00095001,
+      13, 0x80000000 | 12, 0x00095009,
+
+       0        // eod
+};
+
+void Mpris2TrackList::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        auto *_t = static_cast<Mpris2TrackList *>(_o);
+        (void)_t;
+        switch (_id) {
+        case 0: _t->TrackAdded((*reinterpret_cast< TrackMetadata(*)>(_a[1])),(*reinterpret_cast< const QDBusObjectPath(*)>(_a[2]))); break;
+        case 1: _t->TrackListReplaced((*reinterpret_cast< const QList<QDBusObjectPath>(*)>(_a[1])),(*reinterpret_cast< const QDBusObjectPath(*)>(_a[2]))); break;
+        case 2: _t->TrackMetadataChanged((*reinterpret_cast< const QDBusObjectPath(*)>(_a[1])),(*reinterpret_cast< TrackMetadata(*)>(_a[2]))); break;
+        case 3: _t->TrackRemoved((*reinterpret_cast< const QDBusObjectPath(*)>(_a[1]))); break;
+        case 4: _t->AddTrack((*reinterpret_cast< const QString(*)>(_a[1])),(*reinterpret_cast< const QDBusObjectPath(*)>(_a[2])),(*reinterpret_cast< bool(*)>(_a[3]))); break;
+        case 5: { TrackMetadata _r = _t->GetTracksMetadata((*reinterpret_cast< const QList<QDBusObjectPath>(*)>(_a[1])));
+            if (_a[0]) *reinterpret_cast< TrackMetadata*>(_a[0]) = std::move(_r); }  break;
+        case 6: _t->GoTo((*reinterpret_cast< const QDBusObjectPath(*)>(_a[1]))); break;
+        case 7: _t->RemoveTrack((*reinterpret_cast< const QDBusObjectPath(*)>(_a[1]))); break;
+        default: ;
+        }
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+        case 0:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+            case 0:
+                *reinterpret_cast<int*>(_a[0]) = qRegisterMetaType< TrackMetadata >(); break;
+            }
+            break;
+        case 2:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+            case 1:
+                *reinterpret_cast<int*>(_a[0]) = qRegisterMetaType< TrackMetadata >(); break;
+            }
+            break;
+        }
+    } else if (_c == QMetaObject::IndexOfMethod) {
+        int *result = reinterpret_cast<int *>(_a[0]);
+        {
+            using _t = void (Mpris2TrackList::*)(TrackMetadata , const QDBusObjectPath & );
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&Mpris2TrackList::TrackAdded)) {
+                *result = 0;
+                return;
+            }
+        }
+        {
+            using _t = void (Mpris2TrackList::*)(const QList<QDBusObjectPath> & , const QDBusObjectPath & );
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&Mpris2TrackList::TrackListReplaced)) {
+                *result = 1;
+                return;
+            }
+        }
+        {
+            using _t = void (Mpris2TrackList::*)(const QDBusObjectPath & , TrackMetadata );
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&Mpris2TrackList::TrackMetadataChanged)) {
+                *result = 2;
+                return;
+            }
+        }
+        {
+            using _t = void (Mpris2TrackList::*)(const QDBusObjectPath & );
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&Mpris2TrackList::TrackRemoved)) {
+                *result = 3;
+                return;
+            }
+        }
+    }
+#ifndef QT_NO_PROPERTIES
+    else if (_c == QMetaObject::ReadProperty) {
+        auto *_t = static_cast<Mpris2TrackList *>(_o);
+        (void)_t;
+        void *_v = _a[0];
+        switch (_id) {
+        case 0: *reinterpret_cast< bool*>(_v) = _t->canEditTracks(); break;
+        case 1: *reinterpret_cast< QList<QDBusObjectPath>*>(_v) = _t->tracks(); break;
+        default: break;
+        }
+    } else if (_c == QMetaObject::WriteProperty) {
+    } else if (_c == QMetaObject::ResetProperty) {
+    }
+#endif // QT_NO_PROPERTIES
+}
+
+QT_INIT_METAOBJECT const QMetaObject Mpris2TrackList::staticMetaObject = { {
+    QMetaObject::SuperData::link<QDBusAbstractAdaptor::staticMetaObject>(),
+    qt_meta_stringdata_Mpris2TrackList.data,
+    qt_meta_data_Mpris2TrackList,
+    qt_static_metacall,
+    nullptr,
+    nullptr
+} };
+
+
+const QMetaObject *Mpris2TrackList::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *Mpris2TrackList::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_meta_stringdata_Mpris2TrackList.stringdata0))
+        return static_cast<void*>(this);
+    return QDBusAbstractAdaptor::qt_metacast(_clname);
+}
+
+int Mpris2TrackList::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QDBusAbstractAdaptor::qt_metacall(_c, _id, _a);
+    if (_id < 0)
+        return _id;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        if (_id < 8)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 8;
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        if (_id < 8)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 8;
+    }
+#ifndef QT_NO_PROPERTIES
+    else if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty
+            || _c == QMetaObject::ResetProperty || _c == QMetaObject::RegisterPropertyMetaType) {
+        qt_static_metacall(this, _c, _id, _a);
+        _id -= 2;
+    } else if (_c == QMetaObject::QueryPropertyDesignable) {
+        _id -= 2;
+    } else if (_c == QMetaObject::QueryPropertyScriptable) {
+        _id -= 2;
+    } else if (_c == QMetaObject::QueryPropertyStored) {
+        _id -= 2;
+    } else if (_c == QMetaObject::QueryPropertyEditable) {
+        _id -= 2;
+    } else if (_c == QMetaObject::QueryPropertyUser) {
+        _id -= 2;
+    }
+#endif // QT_NO_PROPERTIES
+    return _id;
+}
+
+// SIGNAL 0
+void Mpris2TrackList::TrackAdded(TrackMetadata _t1, const QDBusObjectPath & _t2)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    QMetaObject::activate(this, &staticMetaObject, 0, _a);
+}
+
+// SIGNAL 1
+void Mpris2TrackList::TrackListReplaced(const QList<QDBusObjectPath> & _t1, const QDBusObjectPath & _t2)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    QMetaObject::activate(this, &staticMetaObject, 1, _a);
+}
+
+// SIGNAL 2
+void Mpris2TrackList::TrackMetadataChanged(const QDBusObjectPath & _t1, TrackMetadata _t2)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    QMetaObject::activate(this, &staticMetaObject, 2, _a);
+}
+
+// SIGNAL 3
+void Mpris2TrackList::TrackRemoved(const QDBusObjectPath & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 3, _a);
+}
+QT_WARNING_POP
+QT_END_MOC_NAMESPACE

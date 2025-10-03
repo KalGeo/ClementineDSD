@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgstmoodbar.a CMakeFiles/gstmoodbar.dir/gstfastspectrum.cpp.o CMakeFiles/gstmoodbar.dir/plugin.cpp.o
+/usr/bin/ranlib libgstmoodbar.a

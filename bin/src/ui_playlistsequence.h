@@ -1,0 +1,135 @@
+/********************************************************************************
+** Form generated from reading UI file 'playlistsequence.ui'
+**
+** Created by: Qt User Interface Compiler version 5.15.13
+**
+** WARNING! All changes made in this file will be lost when recompiling UI file!
+********************************************************************************/
+
+#ifndef UI_PLAYLISTSEQUENCE_H
+#define UI_PLAYLISTSEQUENCE_H
+
+#include <QtCore/QVariant>
+#include <QtWidgets/QAction>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QToolButton>
+#include <QtWidgets/QWidget>
+
+QT_BEGIN_NAMESPACE
+
+class Ui_PlaylistSequence
+{
+public:
+    QAction *action_repeat_off;
+    QAction *action_repeat_track;
+    QAction *action_repeat_album;
+    QAction *action_repeat_playlist;
+    QAction *action_repeat_onebyone;
+    QAction *action_repeat_intro;
+    QAction *action_shuffle_off;
+    QAction *action_shuffle_inside_album;
+    QAction *action_shuffle_all;
+    QAction *action_shuffle_albums;
+    QHBoxLayout *horizontalLayout;
+    QToolButton *repeat;
+    QToolButton *shuffle;
+
+    void setupUi(QWidget *PlaylistSequence)
+    {
+        if (PlaylistSequence->objectName().isEmpty())
+            PlaylistSequence->setObjectName(QString::fromUtf8("PlaylistSequence"));
+        PlaylistSequence->resize(80, 37);
+        PlaylistSequence->setStyleSheet(QString::fromUtf8("QToolButton, QToolButton:hover, QToolButton:pressed {\n"
+"  border: 0px;\n"
+"  background: transparent;\n"
+"}\n"
+""));
+        action_repeat_off = new QAction(PlaylistSequence);
+        action_repeat_off->setObjectName(QString::fromUtf8("action_repeat_off"));
+        action_repeat_off->setCheckable(true);
+        action_repeat_off->setChecked(true);
+        action_repeat_track = new QAction(PlaylistSequence);
+        action_repeat_track->setObjectName(QString::fromUtf8("action_repeat_track"));
+        action_repeat_track->setCheckable(true);
+        action_repeat_album = new QAction(PlaylistSequence);
+        action_repeat_album->setObjectName(QString::fromUtf8("action_repeat_album"));
+        action_repeat_album->setCheckable(true);
+        action_repeat_playlist = new QAction(PlaylistSequence);
+        action_repeat_playlist->setObjectName(QString::fromUtf8("action_repeat_playlist"));
+        action_repeat_playlist->setCheckable(true);
+        action_repeat_onebyone = new QAction(PlaylistSequence);
+        action_repeat_onebyone->setObjectName(QString::fromUtf8("action_repeat_onebyone"));
+        action_repeat_onebyone->setCheckable(true);
+        action_repeat_intro = new QAction(PlaylistSequence);
+        action_repeat_intro->setObjectName(QString::fromUtf8("action_repeat_intro"));
+        action_repeat_intro->setCheckable(true);
+        action_shuffle_off = new QAction(PlaylistSequence);
+        action_shuffle_off->setObjectName(QString::fromUtf8("action_shuffle_off"));
+        action_shuffle_off->setCheckable(true);
+        action_shuffle_off->setChecked(true);
+        action_shuffle_inside_album = new QAction(PlaylistSequence);
+        action_shuffle_inside_album->setObjectName(QString::fromUtf8("action_shuffle_inside_album"));
+        action_shuffle_inside_album->setCheckable(true);
+        action_shuffle_all = new QAction(PlaylistSequence);
+        action_shuffle_all->setObjectName(QString::fromUtf8("action_shuffle_all"));
+        action_shuffle_all->setCheckable(true);
+        action_shuffle_albums = new QAction(PlaylistSequence);
+        action_shuffle_albums->setObjectName(QString::fromUtf8("action_shuffle_albums"));
+        action_shuffle_albums->setCheckable(true);
+        horizontalLayout = new QHBoxLayout(PlaylistSequence);
+        horizontalLayout->setSpacing(0);
+        horizontalLayout->setContentsMargins(0, 0, 0, 0);
+        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+        repeat = new QToolButton(PlaylistSequence);
+        repeat->setObjectName(QString::fromUtf8("repeat"));
+        repeat->setIconSize(QSize(16, 16));
+        repeat->setCheckable(true);
+        repeat->setPopupMode(QToolButton::InstantPopup);
+
+        horizontalLayout->addWidget(repeat);
+
+        shuffle = new QToolButton(PlaylistSequence);
+        shuffle->setObjectName(QString::fromUtf8("shuffle"));
+        shuffle->setIconSize(QSize(16, 16));
+        shuffle->setCheckable(true);
+        shuffle->setPopupMode(QToolButton::InstantPopup);
+
+        horizontalLayout->addWidget(shuffle);
+
+
+        retranslateUi(PlaylistSequence);
+
+        QMetaObject::connectSlotsByName(PlaylistSequence);
+    } // setupUi
+
+    void retranslateUi(QWidget *PlaylistSequence)
+    {
+        action_repeat_off->setText(QCoreApplication::translate("PlaylistSequence", "Don't repeat", nullptr));
+        action_repeat_track->setText(QCoreApplication::translate("PlaylistSequence", "Repeat track", nullptr));
+        action_repeat_album->setText(QCoreApplication::translate("PlaylistSequence", "Repeat album", nullptr));
+        action_repeat_playlist->setText(QCoreApplication::translate("PlaylistSequence", "Repeat playlist", nullptr));
+        action_repeat_onebyone->setText(QCoreApplication::translate("PlaylistSequence", "Stop after each track", nullptr));
+        action_repeat_intro->setText(QCoreApplication::translate("PlaylistSequence", "Intro tracks", nullptr));
+        action_shuffle_off->setText(QCoreApplication::translate("PlaylistSequence", "Don't shuffle", nullptr));
+        action_shuffle_inside_album->setText(QCoreApplication::translate("PlaylistSequence", "Shuffle tracks in this album", nullptr));
+        action_shuffle_all->setText(QCoreApplication::translate("PlaylistSequence", "Shuffle all", nullptr));
+        action_shuffle_albums->setText(QCoreApplication::translate("PlaylistSequence", "Shuffle albums", nullptr));
+#if QT_CONFIG(tooltip)
+        repeat->setToolTip(QCoreApplication::translate("PlaylistSequence", "Repeat", nullptr));
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        shuffle->setToolTip(QCoreApplication::translate("PlaylistSequence", "Shuffle", nullptr));
+#endif // QT_CONFIG(tooltip)
+        (void)PlaylistSequence;
+    } // retranslateUi
+
+};
+
+namespace Ui {
+    class PlaylistSequence: public Ui_PlaylistSequence {};
+} // namespace Ui
+
+QT_END_NAMESPACE
+
+#endif // UI_PLAYLISTSEQUENCE_H

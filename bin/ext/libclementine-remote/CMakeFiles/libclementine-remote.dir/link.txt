@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblibclementine-remote.a "CMakeFiles/libclementine-remote.dir/remotecontrolmessages.pb.cc.o"
+/usr/bin/ranlib liblibclementine-remote.a

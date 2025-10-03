@@ -1,0 +1,2 @@
+/usr/bin/ar qc libqtiocompressor.a CMakeFiles/qtiocompressor.dir/qtiocompressor.cpp.o CMakeFiles/qtiocompressor.dir/moc_qtiocompressor.cpp.o
+/usr/bin/ranlib libqtiocompressor.a

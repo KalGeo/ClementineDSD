@@ -1,0 +1,121 @@
+/********************************************************************************
+** Form generated from reading UI file 'dynamicplaylistcontrols.ui'
+**
+** Created by: Qt User Interface Compiler version 5.15.13
+**
+** WARNING! All changes made in this file will be lost when recompiling UI file!
+********************************************************************************/
+
+#ifndef UI_DYNAMICPLAYLISTCONTROLS_H
+#define UI_DYNAMICPLAYLISTCONTROLS_H
+
+#include <QtCore/QVariant>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QWidget>
+
+QT_BEGIN_NAMESPACE
+
+class Ui_DynamicPlaylistControls
+{
+public:
+    QVBoxLayout *verticalLayout_2;
+    QFrame *container;
+    QHBoxLayout *horizontalLayout;
+    QVBoxLayout *verticalLayout;
+    QLabel *label1;
+    QLabel *label2;
+    QPushButton *expand;
+    QPushButton *repopulate;
+    QPushButton *off;
+
+    void setupUi(QWidget *DynamicPlaylistControls)
+    {
+        if (DynamicPlaylistControls->objectName().isEmpty())
+            DynamicPlaylistControls->setObjectName(QString::fromUtf8("DynamicPlaylistControls"));
+        DynamicPlaylistControls->resize(397, 50);
+        DynamicPlaylistControls->setStyleSheet(QString::fromUtf8("#container {\n"
+"	background: rgba(200, 200, 200, 50%);\n"
+"    border-radius: 10px;\n"
+"    border: 1px solid rgba(200, 200, 200, 75%);\n"
+"}\n"
+"\n"
+"#label1 {\n"
+"	font-weight: bold;\n"
+"}\n"
+"\n"
+"#label2 {\n"
+"	font-size: 7.5pt;\n"
+"}"));
+        verticalLayout_2 = new QVBoxLayout(DynamicPlaylistControls);
+        verticalLayout_2->setContentsMargins(0, 0, 0, 0);
+        verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
+        container = new QFrame(DynamicPlaylistControls);
+        container->setObjectName(QString::fromUtf8("container"));
+        container->setFrameShape(QFrame::StyledPanel);
+        container->setFrameShadow(QFrame::Raised);
+        horizontalLayout = new QHBoxLayout(container);
+        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
+        verticalLayout = new QVBoxLayout();
+        verticalLayout->setSpacing(0);
+        verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
+        label1 = new QLabel(container);
+        label1->setObjectName(QString::fromUtf8("label1"));
+
+        verticalLayout->addWidget(label1);
+
+        label2 = new QLabel(container);
+        label2->setObjectName(QString::fromUtf8("label2"));
+
+        verticalLayout->addWidget(label2);
+
+
+        horizontalLayout->addLayout(verticalLayout);
+
+        expand = new QPushButton(container);
+        expand->setObjectName(QString::fromUtf8("expand"));
+
+        horizontalLayout->addWidget(expand);
+
+        repopulate = new QPushButton(container);
+        repopulate->setObjectName(QString::fromUtf8("repopulate"));
+
+        horizontalLayout->addWidget(repopulate);
+
+        off = new QPushButton(container);
+        off->setObjectName(QString::fromUtf8("off"));
+
+        horizontalLayout->addWidget(off);
+
+
+        verticalLayout_2->addWidget(container);
+
+
+        retranslateUi(DynamicPlaylistControls);
+
+        QMetaObject::connectSlotsByName(DynamicPlaylistControls);
+    } // setupUi
+
+    void retranslateUi(QWidget *DynamicPlaylistControls)
+    {
+        label1->setText(QCoreApplication::translate("DynamicPlaylistControls", "Dynamic mode is on", nullptr));
+        label2->setText(QCoreApplication::translate("DynamicPlaylistControls", "New tracks will be added automatically.", nullptr));
+        expand->setText(QCoreApplication::translate("DynamicPlaylistControls", "Expand", nullptr));
+        repopulate->setText(QCoreApplication::translate("DynamicPlaylistControls", "Repopulate", nullptr));
+        off->setText(QCoreApplication::translate("DynamicPlaylistControls", "Turn off", nullptr));
+        (void)DynamicPlaylistControls;
+    } // retranslateUi
+
+};
+
+namespace Ui {
+    class DynamicPlaylistControls: public Ui_DynamicPlaylistControls {};
+} // namespace Ui
+
+QT_END_NAMESPACE
+
+#endif // UI_DYNAMICPLAYLISTCONTROLS_H

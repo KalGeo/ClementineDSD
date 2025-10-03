@@ -1,0 +1,2 @@
+/usr/bin/ar qc libqtsingleapplication.a CMakeFiles/qtsingleapplication.dir/qtlocalpeer.cpp.o CMakeFiles/qtsingleapplication.dir/qtsingleapplication.cpp.o CMakeFiles/qtsingleapplication.dir/qtsinglecoreapplication.cpp.o CMakeFiles/qtsingleapplication.dir/moc_qtlocalpeer.cpp.o CMakeFiles/qtsingleapplication.dir/moc_qtsingleapplication.cpp.o CMakeFiles/qtsingleapplication.dir/moc_qtsinglecoreapplication.cpp.o
+/usr/bin/ranlib libqtsingleapplication.a
