@@ -23,6 +23,7 @@
 #include <attachedpictureframe.h>
 #include <commentsframe.h>
 #include <dsffile.h>
+#include <dsdifffile.h>
 #include <fileref.h>
 #include <flacfile.h>
 #include <id3v2tag.h>
@@ -903,6 +904,8 @@ cpb::tagreader::SongMetadata_Type TagReader::GuessFileType(
     return cpb::tagreader::SongMetadata_Type_APE;
   if (dynamic_cast<TagLib::DSF::File*>(fileref->file()))
     return cpb::tagreader::SongMetadata_Type_DSF;
+  if (dynamic_cast<TagLib::DSDIFF::File*>(fileref->file()))
+    return cpb::tagreader::SongMetadata_Type_DFF;
 
   return cpb::tagreader::SongMetadata_Type_UNKNOWN;
 }

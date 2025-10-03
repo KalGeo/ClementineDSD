@@ -23,6 +23,7 @@ message SongMetadata {
     VGM = 16;
     APE = 17;
     DSF = 18;
+    DFF = 19;
     STREAM = 99;
   }
 
