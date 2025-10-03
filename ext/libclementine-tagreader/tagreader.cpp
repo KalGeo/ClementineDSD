@@ -188,13 +188,6 @@ void TagReader::ReadFile(const QString& filename,
     song->set_year(tag->year());
     song->set_track(tag->track());
     song->set_valid(true);
-  } else {
-    // DSD files might not have tags, but they're still valid media files
-    // Check if it's a DSD file type and mark as valid
-    cpb::tagreader::SongMetadata_Type filetype = GuessFileType(fileref.get());
-    if (filetype == cpb::tagreader::SongMetadata_Type_DSF || filetype == cpb::tagreader::SongMetadata_Type_DFF) {
-      song->set_valid(true);
-    }
   }
 
   QString disc;
@@ -1351,7 +1344,18 @@ bool TagReader::IsMediaFile(const QString& filename) const {
   qLog(Debug) << "Checking for valid file" << filename;
 
   std::unique_ptr<TagLib::FileRef> fileref(factory_->GetFileRef(filename));
-  return !fileref->isNull() && fileref->tag();
+  if (fileref->isNull()) {
+    return false;
+  }
+  
+  // Check if it's a recognized file type (including DSD files)
+  cpb::tagreader::SongMetadata_Type filetype = GuessFileType(fileref.get());
+  if (filetype != cpb::tagreader::SongMetadata_Type_UNKNOWN) {
+    return true;
+  }
+  
+  // Fallback: check if tag exists (for backward compatibility)
+  return fileref->tag() != nullptr;
 }
 
 QByteArray TagReader::LoadEmbeddedArt(const QString& filename) const {
