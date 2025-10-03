@@ -1022,6 +1022,23 @@ bool TagReader::SaveFile(const QString& filename,
       SetTextFrame("TCMP", song.compilation() ? QString::number(1) : QString(),
                    tag);
     }
+  } else if (TagLib::DSDIFF::File* file =
+                 dynamic_cast<TagLib::DSDIFF::File*>(fileref->file())) {
+    // DFF files also use ID3v2 tags, so we can save all metadata using ID3v2 frames
+    TagLib::ID3v2::Tag* tag = dynamic_cast<TagLib::ID3v2::Tag*>(file->tag());
+    if (tag) {
+      SetTextFrame("TBPM",
+                   song.bpm() <= 0 - 1 ? QString() : QString::number(song.bpm()),
+                   tag);
+      SetTextFrame("TCOM", song.composer(), tag);
+      SetTextFrame("TIT1", song.grouping(), tag);
+      SetTextFrame("TOPE", song.performer(), tag);
+      SetUnsyncLyricsFrame(song.lyrics(), tag);
+      // Skip TPE1 (which is the artist) here because we already set it
+      SetTextFrame("TPE2", song.albumartist(), tag);
+      SetTextFrame("TCMP", song.compilation() ? QString::number(1) : QString(),
+                   tag);
+    }
   }
 
   // Handle all the files which have VorbisComments (Ogg, OPUS, ...) in the same
@@ -1213,6 +1230,18 @@ bool TagReader::SaveSongRatingToFile(
   } else if (TagLib::DSF::File* file =
                  dynamic_cast<TagLib::DSF::File*>(fileref->file())) {
     // DSF files use ID3v2 tags, so we can save rating using ID3v2 frames
+    TagLib::ID3v2::Tag* tag = dynamic_cast<TagLib::ID3v2::Tag*>(file->tag());
+    if (tag) {
+      // Save as FMPS
+      SetUserTextFrame("FMPS_Rating", QString::number(song.rating()), tag);
+      
+      // Also save as POPM
+      TagLib::ID3v2::PopularimeterFrame* frame = GetPOPMFrameFromTag(tag);
+      frame->setRating(ConvertToPOPMRating(song.rating()));
+    }
+  } else if (TagLib::DSDIFF::File* file =
+                 dynamic_cast<TagLib::DSDIFF::File*>(fileref->file())) {
+    // DFF files also use ID3v2 tags, so we can save rating using ID3v2 frames
     TagLib::ID3v2::Tag* tag = dynamic_cast<TagLib::ID3v2::Tag*>(file->tag());
     if (tag) {
       // Save as FMPS
