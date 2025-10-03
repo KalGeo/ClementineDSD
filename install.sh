@@ -15,22 +15,14 @@ if [ ! -f "bin/clementinedsd" ] || [ ! -f "ClementineDSD.desktop" ] || [ ! -f "c
     exit 1
 fi
 
-# Check if running as root (for system-wide installation)
-if [ "$EUID" -eq 0 ]; then
-    INSTALL_MODE="system"
-    PREFIX="/usr/local"
-    ICON_DIR="$PREFIX/share/pixmaps"
-    DESKTOP_DIR="/usr/share/applications"
-    BIN_DIR="$PREFIX/bin"
-else
-    INSTALL_MODE="user"
-    PREFIX="$HOME/.local"
-    ICON_DIR="$PREFIX/share/pixmaps"
-    DESKTOP_DIR="$HOME/.local/share/applications"
-    BIN_DIR="$PREFIX/bin"
-fi
+# Always use system-wide installation
+INSTALL_MODE="system"
+PREFIX="/usr/local"
+ICON_DIR="$PREFIX/share/pixmaps"
+DESKTOP_DIR="/usr/share/applications"
+BIN_DIR="$PREFIX/bin"
 
-echo "📁 Installation mode: $INSTALL_MODE"
+echo "📁 Installation mode: $INSTALL_MODE (system-wide)"
 echo "📍 Installing to: $PREFIX"
 
 # Create directories if they don't exist
@@ -92,14 +84,6 @@ if [ -f "$HOME/.config/ClementineDSD/ClementineDSD.conf" ]; then
     sed -i 's/startupbehaviour=1/startupbehaviour=2/g' "$HOME/.config/ClementineDSD/ClementineDSD.conf" 2>/dev/null || true
 fi
 
-# Optional: System-wide icon installation for faster dock recognition
-echo ""
-echo "💡 For faster dock icon display, you can install the icon system-wide:"
-echo "   sudo cp clementinedsd.png /usr/share/pixmaps/clementine.png"
-echo "   sudo cp clementinedsd.png /usr/share/icons/hicolor/48x48/apps/clementine.png"
-echo "   sudo gtk-update-icon-cache -f /usr/share/icons/hicolor/"
-echo "   Then change desktop file to: Icon=clementine"
-
 echo ""
 echo "✅ ClementineDSD installed successfully!"
 echo ""
@@ -113,11 +97,7 @@ echo "   • Executable: $INSTALL_PATH"
 echo "   • Desktop file: $DESKTOP_DIR/org.clementine_player.ClementineDSD.desktop"
 echo "   • Icon: $ICON_DIR/clementine.png"
 echo ""
-if [ "$INSTALL_MODE" = "system" ]; then
-    echo "🔧 System-wide installation complete!"
-else
-    echo "👤 User installation complete!"
-fi
+echo "🔧 System-wide installation complete!"
 echo ""
 echo "🎧 Enjoy your DSD audio playback with ClementineDSD!"
 
